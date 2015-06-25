@@ -1,35 +1,33 @@
 # Feed
 
+from internals import DbObject
+
 class FeedException(Exception):
-	pass
+    pass
 
-class Feed(object):
-	def __init__(self, cursor, key=None, url=None)
-		cursor.execute("create table if not exists Feed (url, etag)")
-		if key is None:
-			if url is None:
-				raise FeedException("url is needed")
-			self.url = url
-			cursor.execute("insert into Feed (url) values (?, ?)", (self.__key, url))
-			self.__key = cursor.getconnection().last_insert_rowid()
-		else:
-			self.__key = key
-			for row in cursor.execute("select url from Feed where rowid = ?", (self.__key,)):
-				self.url = row[0]
-		self.__url = self.url
+class Feed(DbObject):
+    def __init__(self, cursor, rowid=None, url=None, **kw):
+        if rowid is None:
+            if url is None:
+                raise FeedException("url is needed")
+        DbObject.__init__(self, cursor, rowid=rowid, columns=("url", "etag"), url=url, **kw)
 
-	def __eq__(self, other):
-		return self.__type__ == other.__type__ and self.key == other.key
+class FeedEntry(DbObject):
+    def __init__(self, cursor, rowid=None, feed=None, **kw):
+        if rowid is None:
+            if feed is None:
+                raise FeedException("feed is needed")
+        DbObject.__init__(self, cursor, rowid=rowid, columns=("author", "updated", "published", "summary", "content", "feedid"), feedid=feed.id if feed else None, **kw)
+        self.__feed = feed
 
-	def commit(self, cursor):
-		if self.__url != self.url:
-			cursor.execute("update Feed set url = ? where key = ?", (self.url, self.__key))
-			self.__url = self.url
+    def __getattr__(self, name):
+        if name == "feed":
+            return self.__feed
+        return super(FeedEntry, self).__getattr__(name)
 
-	def rollback(self, cursor):
-		self.url = self.__url
-
-	def __getattr__(self, name):
-		if name == "key":
-			return self.__key
-		raise AttributeError
+    def __setattr__(self, name, value):
+        if name == "feed":
+            self.__feed = value)
+            super(FeedEntry, self).__setattr__("feedid", value.id)
+        else:
+            super(FeedEntry, self).__setattr__(name, value)
