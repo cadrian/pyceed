@@ -1,21 +1,30 @@
 #!/usr/bin/env python3
 
 import feedparser
-from feed import atom
-from feed.date.rfc3339 import tf_from_timestamp
+from feedgen.feed import FeedGenerator
 
-xmldoc, out_feed = atom.new_xmldoc_feed()
+out_feed = FeedGenerator()
 
-d = feedparser.parse('http://www.courantpositif.fr/feed/')
+url = 'http://www.courantpositif.fr/feed/'
+d = feedparser.parse(url)
 print("~~ %s ~~" % d.feed.title)
-out_feed.title = d.feed.title
+out_feed.title(d.feed.title)
+out_feed.subtitle(d.feed.subtitle)
+out_feed.id(d.feed.get("id", "no id"))
+out_feed.updated(d.feed.updated)
 
 for e in d.entries:
-	print(" * [%s] %s" % (e.published, e.title))
-	out_entry = atom.Entry()
-	out_entry.title = e.title
-	out_entry.published = tf_from_timestamp(e.published)
-	out_entry.id = e.id
-	out_feed.entries.append(out_entry)
+    print(" * [%s] %s" % (e.published, e.title))
+    out_entry = out_feed.add_entry()
+    out_entry.title(e.title)
+    out_entry.published(e.published)
+    out_entry.updated(e.updated)
+    out_entry.id(e.id)
+    out_entry.summary(e.summary)
+    for c in e.content:
+        out_entry.content(content=c.value, type=c.type) #, src=c.base
+    for l in e.links:
+        print("   > [%s] %s" % (l.rel, l.href))
+        out_entry.link(link=l)
 
-print("\n\n%s" % xmldoc)
+print("\n\n%s" % out_feed.atom_str(pretty=True))
