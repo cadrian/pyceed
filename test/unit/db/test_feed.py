@@ -25,9 +25,10 @@ class TestFeed(unittest.TestCase):
 		}).thenReturn([])
 		when(self.cursor).execute("select rowid from FeedEntry where feedid = :feedid", {
 			"feedid": 42
-		}).thenReturn([]).thenReturn([(1,)]).thenReturn([(1,),(13,)])
+		}).thenReturn([]).thenReturn([]).thenReturn([(1,)]).thenReturn([(1,),(13,)])
 
 		feed = Feed(self.transaction, url="foo://bar")[0]
+		self.assertEqual([], FeedEntry(self.transaction, feed=feed, insert=False))
 		feed_entry_1 = FeedEntry(self.transaction, feed=feed)[0]
 		feed_entry_2 = FeedEntry(self.transaction, feed=feed, insert=True)[0]
 

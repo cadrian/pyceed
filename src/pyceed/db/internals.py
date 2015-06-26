@@ -7,7 +7,7 @@ class _DbObject(object):
 	Parent of all database objects.
 	"""
 
-	def __new__(cls, transaction, rowid=None, insert=False, **values):
+	def __new__(cls, transaction, rowid=None, insert=None, **values):
 		"""
 		Make sure that an instance with a given rowid is always the same instance.
 
@@ -24,7 +24,11 @@ class _DbObject(object):
 		instances = transaction._map.get(cls, None)
 		if instances is None:
 			instances = transaction._map[cls] = dict()
-			transaction.cursor.execute("create table if not exists %s (%s)" % (cls.__name__, ", ".join(columns)))
+			query = "create table if not exists %s (%s)" % (
+				cls.__name__,
+				 ", ".join(columns),
+			)
+			transaction.cursor.execute(query)
 
 		if rowid is None:
 			if values and not insert:
@@ -43,6 +47,8 @@ class _DbObject(object):
 			data = {k: None for k in columns}
 
 			if rowid is None:
+				if insert is False:
+					return []
 				data.update(values)
 				query = "insert into %s (%s) values (%s)" % (
 					cls.__name__,
