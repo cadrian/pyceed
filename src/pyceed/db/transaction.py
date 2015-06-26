@@ -2,6 +2,7 @@
 
 from pyceed.db.internals import DbException, _DbObject
 
+
 class Transaction(object):
     def __init__(self, connection):
         """

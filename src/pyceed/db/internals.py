@@ -1,6 +1,7 @@
 class DbException(Exception):
     pass
 
+
 class _DbObject(object):
     """
     Parent of all database objects.
@@ -28,6 +29,7 @@ class _DbObject(object):
         if rowid is not None:
             result = instances.get(rowid, None)
         elif values:
+            # TODO PAS BON IL FAUT TESTER UNIQUEMENT SUR LES CHAMPS UNIQUES
             for row in transaction.cursor.execute("select rowid from %s where %s" % (
                 cls.__name__,
                 " and ".join("%s = :%s" % (k,k) for k in values.keys()),
