@@ -6,6 +6,10 @@ class FakeDbObject(_DbObject):
     _columns = ("timestamp", "value")
 
 class TestDbObject(unittest.TestCase):
+    """
+    Test basic DbObject stuff
+    """
+
     def setUp(self):
         self.transaction = mock()
         self.transaction._map = {}
@@ -25,7 +29,8 @@ class TestDbObject(unittest.TestCase):
             "value": None,
         })
         inorder.verify(self.cursor, times=1).getconnection()
-        verifyNoMoreInteractions(self.cursor)
+        inorder.verify(self.connection, times=1).last_insert_rowid()
+        verifyNoMoreInteractions(self.cursor, self.connection)
         self.assertIsNone(fdo.value)
         self.assertIsNone(fdo.timestamp)
         self.assertTrue(fdo.rowid == 42)
@@ -42,13 +47,14 @@ class TestDbObject(unittest.TestCase):
             "value": None,
         })
         inorder.verify(self.cursor, times=1).getconnection()
+        inorder.verify(self.connection, times=1).last_insert_rowid()
 
         fdo2 = FakeDbObject(self.transaction, rowid=42)
-        verifyNoMoreInteractions(self.cursor)
+        verifyNoMoreInteractions(self.cursor, self.connection)
 
         self.assertTrue(fdo is fdo2)
 
-    def test_create_dirty(self):
+    def test_create_commit(self):
         when(self.connection).last_insert_rowid().thenReturn(42)
 
         fdo = FakeDbObject(self.transaction)
@@ -59,9 +65,10 @@ class TestDbObject(unittest.TestCase):
             "value": None,
         })
         inorder.verify(self.cursor, times=1).getconnection()
+        inorder.verify(self.connection, times=1).last_insert_rowid()
 
         fdo2 = FakeDbObject(self.transaction, rowid=42, value="foobar")
-        verifyNoMoreInteractions(self.cursor)
+        verifyNoMoreInteractions(self.cursor, self.connection)
 
         self.assertEqual("foobar", fdo.value)
         self.assertTrue(fdo is fdo2)
@@ -71,7 +78,44 @@ class TestDbObject(unittest.TestCase):
             "value": "foobar",
             "rowid": 42,
         })
-        verifyNoMoreInteractions(self.cursor)
+        verifyNoMoreInteractions(self.cursor, self.connection)
+
+    def test_create_rollback(self):
+        when(self.connection).last_insert_rowid().thenReturn(42)
+
+        fdo = FakeDbObject(self.transaction)
+
+        inorder.verify(self.cursor, times=1).execute("create table if not exists FakeDbObject (timestamp, value)")
+        inorder.verify(self.cursor, times=1).execute("insert into FakeDbObject (timestamp, value) values (:timestamp, :value)", {
+            "timestamp": None,
+            "value": None,
+        })
+        inorder.verify(self.cursor, times=1).getconnection()
+        inorder.verify(self.connection, times=1).last_insert_rowid()
+
+        fdo2 = FakeDbObject(self.transaction, rowid=42, value="foobar")
+        verifyNoMoreInteractions(self.cursor, self.connection)
+
+        self.assertEqual("foobar", fdo.value)
+        self.assertTrue(fdo is fdo2)
+
+        fdo.rollback()
+        verifyNoMoreInteractions(self.cursor, self.connection)
+
+        self.assertIsNone(fdo.value)
+
+    def test_select(self):
+        when(self.cursor).execute("select timestamp, value from FakeDbObject where rowid = ?", (42,)).thenReturn([(None,"foobar")]).thenReturn(None)
+
+        fdo = FakeDbObject(self.transaction, rowid=42)
+
+        self.assertEqual("foobar", fdo.value)
+        self.assertIsNone(fdo.timestamp)
+        self.assertTrue(fdo.rowid == 42)
+        self.assertEqual({FakeDbObject: {42: fdo}}, self.transaction._map)
+
+        fdo2 = FakeDbObject(self.transaction, rowid=42)
+        self.assertTrue(fdo is fdo2)
 
 if __name__ == '__main__':
     unittest.main()
