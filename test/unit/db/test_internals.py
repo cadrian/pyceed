@@ -66,5 +66,12 @@ class TestDbObject(unittest.TestCase):
         self.assertEqual("foobar", fdo.value)
         self.assertTrue(fdo is fdo2)
 
+        fdo.commit()
+        inorder.verify(self.cursor, times=1).execute("update FakeDbObject set value = :value where rowid = :rowid", {
+            "value": "foobar",
+            "rowid": 42,
+        })
+        verifyNoMoreInteractions(self.cursor)
+
 if __name__ == '__main__':
     unittest.main()

@@ -3,7 +3,6 @@
 class Transaction(object):
     def __init__(self, connection):
         this.__cursor = connection.cursor()
-        this.__objects = set()
         this._map = {}
 
     def select(self, factory, **kw):
@@ -17,15 +16,23 @@ class Transaction(object):
         """
         Commit all registered objects
         """
-        for obj in this.__objects:
-            obj.commit(this.__cursor)
+        for obj in self.items():
+            obj.commit()
 
     def rollback(self):
         """
         Rollback all the registered objects
         """
-        for obj in this.__objects:
-            obj.rollback(this.__cursor)
+        for obj in self.items():
+            obj.rollback()
+
+    def items(self):
+        """
+        Iterate over all the registered objects
+        """
+        for instances in self._map.values():
+            for instance in instances:
+                yield instance
 
     def __getattr__(self, name):
         if name == "cursor":

@@ -66,6 +66,7 @@ class _DbObject(object):
             result.__rowid = rowid
             result.__data = data
             result.__olddata = dict(data)
+            result.__transaction = transaction
 
             instances[rowid] = result
 
@@ -79,12 +80,14 @@ class _DbObject(object):
         for k,v in values.items():
             setattr(self, k, v)
 
-    def commit(self, transaction):
+    def commit(self):
         if self.__olddata != self.__data:
-            transaction.cursor.execute("update %s set %s where rowid = :rowid" % (
-                self.__type__,
-                ", ".join(["%s = :%s" % (k,k) for k in self.__data.keys()]),
-            ), self.__data)
+            data = {k:v for k,v in self.__data.items() if v != self.__olddata[k]}
+            data["rowid"] = self.__rowid
+            self.__transaction.cursor.execute("update %s set %s where rowid = :rowid" % (
+                type(self).__name__,
+                ", ".join("%s = :%s" % (k,k) for k in self._columns if k in data),
+            ), data)
             self.__olddata.update(self.__data)
 
     def rollback(self):
