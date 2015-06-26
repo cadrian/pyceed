@@ -3,119 +3,140 @@ from mockito import mock, when, verify, verifyNoMoreInteractions, inorder
 from pyceed.db.internals import _DbObject
 
 class FakeDbObject(_DbObject):
-    _columns = ("timestamp", "value")
+	_columns = ("timestamp", "value")
 
 class TestDbObject(unittest.TestCase):
-    """
-    Test basic DbObject stuff
-    """
+	"""
+	Test basic DbObject stuff
+	"""
 
-    def setUp(self):
-        self.transaction = mock()
-        self.transaction._map = {}
-        self.cursor = mock()
-        self.connection = mock()
-        self.transaction.cursor = self.cursor
-        when(self.cursor).getconnection().thenReturn(self.connection)
+	def setUp(self):
+		self.transaction = mock()
+		self.transaction._map = {}
+		self.cursor = mock()
+		self.connection = mock()
+		self.transaction.cursor = self.cursor
+		when(self.cursor).getconnection().thenReturn(self.connection)
 
-    def test_create_empty(self):
-        when(self.connection).last_insert_rowid().thenReturn(42)
+	def test_create_empty(self):
+		when(self.connection).last_insert_rowid().thenReturn(42)
 
-        fdo = FakeDbObject(self.transaction)
+		fdo = FakeDbObject(self.transaction)[0]
 
-        inorder.verify(self.cursor, times=1).execute("create table if not exists FakeDbObject (timestamp, value)")
-        inorder.verify(self.cursor, times=1).execute("insert into FakeDbObject (timestamp, value) values (:timestamp, :value)", {
-            "timestamp": None,
-            "value": None,
-        })
-        inorder.verify(self.cursor, times=1).getconnection()
-        inorder.verify(self.connection, times=1).last_insert_rowid()
-        verifyNoMoreInteractions(self.cursor, self.connection)
-        self.assertIsNone(fdo.value)
-        self.assertIsNone(fdo.timestamp)
-        self.assertTrue(fdo.rowid == 42)
-        self.assertEqual({FakeDbObject: {42: fdo}}, self.transaction._map)
+		inorder.verify(self.cursor, times=1).execute("create table if not exists FakeDbObject (timestamp, value)")
+		inorder.verify(self.cursor, times=1).execute("insert into FakeDbObject (timestamp, value) values (:timestamp, :value)", {
+			"timestamp": None,
+			"value": None,
+		})
+		inorder.verify(self.cursor, times=1).getconnection()
+		inorder.verify(self.connection, times=1).last_insert_rowid()
+		verifyNoMoreInteractions(self.cursor, self.connection)
+		self.assertIsNone(fdo.value)
+		self.assertIsNone(fdo.timestamp)
+		self.assertTrue(fdo.rowid == 42)
+		self.assertEqual({FakeDbObject: {42: fdo}}, self.transaction._map)
 
-    def test_create_same(self):
-        when(self.connection).last_insert_rowid().thenReturn(42)
+	def test_create_same(self):
+		when(self.connection).last_insert_rowid().thenReturn(42)
 
-        fdo = FakeDbObject(self.transaction)
+		fdo = FakeDbObject(self.transaction)[0]
 
-        inorder.verify(self.cursor, times=1).execute("create table if not exists FakeDbObject (timestamp, value)")
-        inorder.verify(self.cursor, times=1).execute("insert into FakeDbObject (timestamp, value) values (:timestamp, :value)", {
-            "timestamp": None,
-            "value": None,
-        })
-        inorder.verify(self.cursor, times=1).getconnection()
-        inorder.verify(self.connection, times=1).last_insert_rowid()
+		inorder.verify(self.cursor, times=1).execute("create table if not exists FakeDbObject (timestamp, value)")
+		inorder.verify(self.cursor, times=1).execute("insert into FakeDbObject (timestamp, value) values (:timestamp, :value)", {
+			"timestamp": None,
+			"value": None,
+		})
+		inorder.verify(self.cursor, times=1).getconnection()
+		inorder.verify(self.connection, times=1).last_insert_rowid()
 
-        fdo2 = FakeDbObject(self.transaction, rowid=42)
-        verifyNoMoreInteractions(self.cursor, self.connection)
+		fdo2 = FakeDbObject(self.transaction, rowid=42)
+		verifyNoMoreInteractions(self.cursor, self.connection)
 
-        self.assertTrue(fdo is fdo2)
+		self.assertTrue(fdo is fdo2)
 
-    def test_create_commit(self):
-        when(self.connection).last_insert_rowid().thenReturn(42)
+	def test_create_commit(self):
+		when(self.connection).last_insert_rowid().thenReturn(42)
 
-        fdo = FakeDbObject(self.transaction)
+		fdo = FakeDbObject(self.transaction)[0]
 
-        inorder.verify(self.cursor, times=1).execute("create table if not exists FakeDbObject (timestamp, value)")
-        inorder.verify(self.cursor, times=1).execute("insert into FakeDbObject (timestamp, value) values (:timestamp, :value)", {
-            "timestamp": None,
-            "value": None,
-        })
-        inorder.verify(self.cursor, times=1).getconnection()
-        inorder.verify(self.connection, times=1).last_insert_rowid()
+		inorder.verify(self.cursor, times=1).execute("create table if not exists FakeDbObject (timestamp, value)")
+		inorder.verify(self.cursor, times=1).execute("insert into FakeDbObject (timestamp, value) values (:timestamp, :value)", {
+			"timestamp": None,
+			"value": None,
+		})
+		inorder.verify(self.cursor, times=1).getconnection()
+		inorder.verify(self.connection, times=1).last_insert_rowid()
 
-        fdo2 = FakeDbObject(self.transaction, rowid=42, value="foobar")
-        verifyNoMoreInteractions(self.cursor, self.connection)
+		fdo2 = FakeDbObject(self.transaction, rowid=42, value="foobar")
+		verifyNoMoreInteractions(self.cursor, self.connection)
 
-        self.assertEqual("foobar", fdo.value)
-        self.assertTrue(fdo is fdo2)
+		self.assertEqual("foobar", fdo.value)
+		self.assertTrue(fdo is fdo2)
 
-        fdo.commit()
-        inorder.verify(self.cursor, times=1).execute("update FakeDbObject set value = :value where rowid = :rowid", {
-            "value": "foobar",
-            "rowid": 42,
-        })
-        verifyNoMoreInteractions(self.cursor, self.connection)
+		fdo.commit()
+		inorder.verify(self.cursor, times=1).execute("update FakeDbObject set value = :value where rowid = :rowid", {
+			"value": "foobar",
+			"rowid": 42,
+		})
+		verifyNoMoreInteractions(self.cursor, self.connection)
 
-    def test_create_rollback(self):
-        when(self.connection).last_insert_rowid().thenReturn(42)
+	def test_create_rollback(self):
+		when(self.connection).last_insert_rowid().thenReturn(42)
 
-        fdo = FakeDbObject(self.transaction)
+		fdo = FakeDbObject(self.transaction)[0]
 
-        inorder.verify(self.cursor, times=1).execute("create table if not exists FakeDbObject (timestamp, value)")
-        inorder.verify(self.cursor, times=1).execute("insert into FakeDbObject (timestamp, value) values (:timestamp, :value)", {
-            "timestamp": None,
-            "value": None,
-        })
-        inorder.verify(self.cursor, times=1).getconnection()
-        inorder.verify(self.connection, times=1).last_insert_rowid()
+		inorder.verify(self.cursor, times=1).execute("create table if not exists FakeDbObject (timestamp, value)")
+		inorder.verify(self.cursor, times=1).execute("insert into FakeDbObject (timestamp, value) values (:timestamp, :value)", {
+			"timestamp": None,
+			"value": None,
+		})
+		inorder.verify(self.cursor, times=1).getconnection()
+		inorder.verify(self.connection, times=1).last_insert_rowid()
 
-        fdo2 = FakeDbObject(self.transaction, rowid=42, value="foobar")
-        verifyNoMoreInteractions(self.cursor, self.connection)
+		fdo2 = FakeDbObject(self.transaction, rowid=42, value="foobar")
+		verifyNoMoreInteractions(self.cursor, self.connection)
 
-        self.assertEqual("foobar", fdo.value)
-        self.assertTrue(fdo is fdo2)
+		self.assertEqual("foobar", fdo.value)
+		self.assertTrue(fdo is fdo2)
 
-        fdo.rollback()
-        verifyNoMoreInteractions(self.cursor, self.connection)
+		fdo.rollback()
+		verifyNoMoreInteractions(self.cursor, self.connection)
 
-        self.assertIsNone(fdo.value)
+		self.assertIsNone(fdo.value)
 
-    def test_select(self):
-        when(self.cursor).execute("select timestamp, value from FakeDbObject where rowid = ?", (42,)).thenReturn([(None,"foobar")]).thenReturn(None)
+	def test_select_one(self):
+		when(self.cursor).execute("select timestamp, value from FakeDbObject where rowid = ?", (42,)).thenReturn([(None,"foobar")]).thenReturn(None)
 
-        fdo = FakeDbObject(self.transaction, rowid=42)
+		fdo = FakeDbObject(self.transaction, rowid=42)
+		self.assertTrue(type(fdo) is FakeDbObject)
 
-        self.assertEqual("foobar", fdo.value)
-        self.assertIsNone(fdo.timestamp)
-        self.assertTrue(fdo.rowid == 42)
-        self.assertEqual({FakeDbObject: {42: fdo}}, self.transaction._map)
+		self.assertEqual("foobar", fdo.value)
+		self.assertIsNone(fdo.timestamp)
+		self.assertTrue(fdo.rowid == 42)
+		self.assertEqual({FakeDbObject: {42: fdo}}, self.transaction._map)
 
-        fdo2 = FakeDbObject(self.transaction, rowid=42)
-        self.assertTrue(fdo is fdo2)
+		fdo2 = FakeDbObject(self.transaction, rowid=42)
+		self.assertTrue(fdo is fdo2)
+
+	def test_select_many(self):
+		when(self.cursor).execute("select rowid from FakeDbObject where value = :value", {
+			"value": "foobar",
+		}).thenReturn([(1,),(13,)]).thenReturn(None)
+		when(self.cursor).execute("select timestamp, value from FakeDbObject where rowid = ?", (1,)).thenReturn([("ts1", "foobar")]).thenReturn(None)
+		when(self.cursor).execute("select timestamp, value from FakeDbObject where rowid = ?", (13,)).thenReturn([("ts13", "foobar")]).thenReturn(None)
+
+		fdos = FakeDbObject(self.transaction, value="foobar")
+
+		self.assertEqual(2, len(fdos))
+
+		self.assertEqual(1, fdos[0].rowid)
+		self.assertEqual("ts1", fdos[0].timestamp)
+		self.assertEqual("foobar", fdos[0].value)
+
+		self.assertEqual(13, fdos[1].rowid)
+		self.assertEqual("ts13", fdos[1].timestamp)
+		self.assertEqual("foobar", fdos[1].value)
+
 
 if __name__ == '__main__':
-    unittest.main()
+	unittest.main()
