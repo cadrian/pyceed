@@ -11,8 +11,8 @@ class _DbObject(object):
 		"""
 		Make sure that an instance with a given rowid is always the same instance.
 
-		If rowid is None, will return a list of all the objects that match the values
-		Otherwise, will return either the object if it exists in the database, or None
+		If rowid is None, will yield all the objects that match the values
+		Otherwise, will either yield the object if it exists in the database, or do nothing
 		"""
 		result = None
 
@@ -31,15 +31,19 @@ class _DbObject(object):
 			transaction.cursor.execute(query)
 
 		if rowid is None:
-			if values and not insert:
+			if values:
 				query = "select rowid from %s where %s" % (
 					cls.__name__,
 					" and ".join("%s = :%s" % (k,k) for k in values.keys()),
 				)
 				ex = transaction.cursor.execute(query, values)
-				results = [ cls(transaction, rowid=row[0], **values).update(**extra) for row in ex ]
-				if results:
-					return results
+				found = False
+				for row in ex:
+					for res in cls(transaction, rowid=row[0], **values):
+						yield res.update(**extra)
+						found = True
+				if found and not insert:
+					return
 		else:
 			result = instances.get(rowid, None)
 
@@ -48,7 +52,7 @@ class _DbObject(object):
 
 			if rowid is None:
 				if insert is False:
-					return []
+					return
 				data.update(values)
 				query = "insert into %s (%s) values (%s)" % (
 					cls.__name__,
@@ -72,7 +76,7 @@ class _DbObject(object):
 				else:
 					# Don't insert a new row if the rowid is provided; in that case,
 					# if the row does not exist None must be returned
-					return None
+					return
 
 			result = super(_DbObject, cls).__new__(cls)
 			result.__rowid = new_rowid
@@ -85,10 +89,7 @@ class _DbObject(object):
 			result.update(**values)
 
 		result.update(**extra)
-		if rowid is None:
-			return [result]
-		else:
-			return result
+		yield result
 
 	def __eq__(self, other):
 		return other is self

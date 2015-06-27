@@ -22,23 +22,21 @@ class Transaction(object):
 
 	def select_all(self, factory, rowid=None, insert=None, **kw):
 		"""
-		Select a list of objects of the given factory, create them if not found.
-		Register and return those objects.
+		Iterate over the selected objects of the given factory, create them if not found.
+		Register and yield those objects.
 
 		Variants:
-		* If rowid is specified, will return at most one object
+		* If rowid is specified, will yield at most one object
 		* If insert=True, will always create a new object
 		* If insert=False, will never create a new object
 		"""
 		result = None
 		with self.__connection:
-			result = factory(transaction=self, rowid=rowid, insert=insert, **kw)
-		if rowid is not None:
-			if result:
-				result = [result]
+			if rowid is None:
+				for obj in factory(transaction=self, insert=insert, **kw):
+					yield obj
 			else:
-				result = []
-		return result
+				yield factory(transaction=self, rowid=rowid, **kw)
 
 	def commit(self):
 		"""

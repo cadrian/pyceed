@@ -27,10 +27,13 @@ class TestFeed(unittest.TestCase):
 			"feedid": 42
 		}).thenReturn([]).thenReturn([]).thenReturn([(1,)]).thenReturn([(1,),(13,)])
 
-		feed = Feed(self.transaction, url="foo://bar")[0]
-		self.assertEqual([], FeedEntry(self.transaction, feed=feed, insert=False))
-		feed_entry_1 = FeedEntry(self.transaction, feed=feed)[0]
-		feed_entry_2 = FeedEntry(self.transaction, feed=feed, insert=True)[0]
+		feed = next(Feed(self.transaction, url="foo://bar"))
+		self.assertEqual([], [o for o in FeedEntry(self.transaction, feed=feed, insert=False)])
+		feed_entry_1 = next(FeedEntry(self.transaction, feed=feed))
+
+		entries = FeedEntry(self.transaction, feed=feed, insert=True)
+		self.assertTrue(next(entries) is feed_entry_1)
+		feed_entry_2 = next(entries)
 
 		self.assertFalse(feed_entry_2 is feed_entry_1)
 

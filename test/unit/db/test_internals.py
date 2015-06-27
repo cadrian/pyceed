@@ -21,7 +21,7 @@ class TestDbObject(unittest.TestCase):
 	def test_create_empty(self):
 		when(self.connection).last_insert_rowid().thenReturn(42)
 
-		fdo = FakeDbObject(self.transaction)[0]
+		fdo = next(FakeDbObject(self.transaction))
 
 		inorder.verify(self.cursor, times=1).execute("create table if not exists FakeDbObject (timestamp, value)")
 		inorder.verify(self.cursor, times=1).execute("insert into FakeDbObject (timestamp, value) values (:timestamp, :value)", {
@@ -39,7 +39,7 @@ class TestDbObject(unittest.TestCase):
 	def test_create_same(self):
 		when(self.connection).last_insert_rowid().thenReturn(42)
 
-		fdo = FakeDbObject(self.transaction)[0]
+		fdo = next(FakeDbObject(self.transaction))
 
 		inorder.verify(self.cursor, times=1).execute("create table if not exists FakeDbObject (timestamp, value)")
 		inorder.verify(self.cursor, times=1).execute("insert into FakeDbObject (timestamp, value) values (:timestamp, :value)", {
@@ -49,7 +49,7 @@ class TestDbObject(unittest.TestCase):
 		inorder.verify(self.cursor, times=1).getconnection()
 		inorder.verify(self.connection, times=1).last_insert_rowid()
 
-		fdo2 = FakeDbObject(self.transaction, rowid=42)
+		fdo2 = next(FakeDbObject(self.transaction, rowid=42))
 		verifyNoMoreInteractions(self.cursor, self.connection)
 
 		self.assertTrue(fdo is fdo2)
@@ -57,7 +57,7 @@ class TestDbObject(unittest.TestCase):
 	def test_create_commit(self):
 		when(self.connection).last_insert_rowid().thenReturn(42)
 
-		fdo = FakeDbObject(self.transaction)[0]
+		fdo = next(FakeDbObject(self.transaction))
 
 		inorder.verify(self.cursor, times=1).execute("create table if not exists FakeDbObject (timestamp, value)")
 		inorder.verify(self.cursor, times=1).execute("insert into FakeDbObject (timestamp, value) values (:timestamp, :value)", {
@@ -67,7 +67,7 @@ class TestDbObject(unittest.TestCase):
 		inorder.verify(self.cursor, times=1).getconnection()
 		inorder.verify(self.connection, times=1).last_insert_rowid()
 
-		fdo2 = FakeDbObject(self.transaction, rowid=42, value="foobar")
+		fdo2 = next(FakeDbObject(self.transaction, rowid=42, value="foobar"))
 		verifyNoMoreInteractions(self.cursor, self.connection)
 
 		self.assertEqual("foobar", fdo.value)
@@ -83,7 +83,7 @@ class TestDbObject(unittest.TestCase):
 	def test_create_rollback(self):
 		when(self.connection).last_insert_rowid().thenReturn(42)
 
-		fdo = FakeDbObject(self.transaction)[0]
+		fdo = next(FakeDbObject(self.transaction))
 
 		inorder.verify(self.cursor, times=1).execute("create table if not exists FakeDbObject (timestamp, value)")
 		inorder.verify(self.cursor, times=1).execute("insert into FakeDbObject (timestamp, value) values (:timestamp, :value)", {
@@ -93,7 +93,7 @@ class TestDbObject(unittest.TestCase):
 		inorder.verify(self.cursor, times=1).getconnection()
 		inorder.verify(self.connection, times=1).last_insert_rowid()
 
-		fdo2 = FakeDbObject(self.transaction, rowid=42, value="foobar")
+		fdo2 = next(FakeDbObject(self.transaction, rowid=42, value="foobar"))
 		verifyNoMoreInteractions(self.cursor, self.connection)
 
 		self.assertEqual("foobar", fdo.value)
@@ -107,7 +107,7 @@ class TestDbObject(unittest.TestCase):
 	def test_select_one(self):
 		when(self.cursor).execute("select timestamp, value from FakeDbObject where rowid = ?", (42,)).thenReturn([(None,"foobar")]).thenReturn(None)
 
-		fdo = FakeDbObject(self.transaction, rowid=42)
+		fdo = next(FakeDbObject(self.transaction, rowid=42))
 		self.assertTrue(type(fdo) is FakeDbObject)
 
 		self.assertEqual("foobar", fdo.value)
@@ -115,7 +115,7 @@ class TestDbObject(unittest.TestCase):
 		self.assertTrue(fdo.rowid == 42)
 		self.assertEqual({FakeDbObject: {42: fdo}}, self.transaction._map)
 
-		fdo2 = FakeDbObject(self.transaction, rowid=42)
+		fdo2 = next(FakeDbObject(self.transaction, rowid=42))
 		self.assertTrue(fdo is fdo2)
 
 	def test_select_many(self):
@@ -127,15 +127,17 @@ class TestDbObject(unittest.TestCase):
 
 		fdos = FakeDbObject(self.transaction, value="foobar")
 
-		self.assertEqual(2, len(fdos))
+		fdo0 = next(fdos)
+		self.assertEqual(1, fdo0.rowid)
+		self.assertEqual("ts1", fdo0.timestamp)
+		self.assertEqual("foobar", fdo0.value)
 
-		self.assertEqual(1, fdos[0].rowid)
-		self.assertEqual("ts1", fdos[0].timestamp)
-		self.assertEqual("foobar", fdos[0].value)
+		fdo1 = next(fdos)
+		self.assertEqual(13, fdo1.rowid)
+		self.assertEqual("ts13", fdo1.timestamp)
+		self.assertEqual("foobar", fdo1.value)
 
-		self.assertEqual(13, fdos[1].rowid)
-		self.assertEqual("ts13", fdos[1].timestamp)
-		self.assertEqual("foobar", fdos[1].value)
+		#fdo2 = next(fdos)
 
 
 if __name__ == '__main__':
