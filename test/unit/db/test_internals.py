@@ -137,7 +137,7 @@ class TestDbObject(unittest.TestCase):
 		self.assertEqual("ts13", fdo1.timestamp)
 		self.assertEqual("foobar", fdo1.value)
 
-		#fdo2 = next(fdos)
+		self.assertRaises(StopIteration, next, fdos)
 
 
 if __name__ == '__main__':
