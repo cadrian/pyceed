@@ -1,3 +1,5 @@
+import re
+
 class FeedSort(object):
 	"""
 	Sort the feed entries according to the given field.
@@ -41,9 +43,7 @@ class FeedRegex(object):
 	Filter the feed entries according to the given regex
 	"""
 
-	import re
-
-	def __init(self, feed, field, regex, flags=0):
+	def __init__(self, feed, field, regex, flags=0):
 		self._feed = feed
 		self._field = field
 		self._pattern = re.compile(regex, flags=flags)
