@@ -16,4 +16,7 @@ clean:
 run-update: $(FILES)
 	PYTHONPATH=$(shell pwd)/src:$(PYTHONPATH) python3 src/pyceed/update_feeds.py
 
-.PHONY: all test run-update
+run-config: $(FILES)
+	PYTHONPATH=$(shell pwd)/src:$(PYTHONPATH) python3 src/pyceed/config_feeds.py
+
+.PHONY: all test run-update run-config
