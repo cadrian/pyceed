@@ -4,7 +4,7 @@ from pyceed.db import Transaction, Feed
 
 import apsw
 
-import pyceed.config
+from pyceed.config import connection
 
 def update_all():
 	trn = Transaction(connection)

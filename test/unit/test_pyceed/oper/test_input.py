@@ -1,6 +1,6 @@
 import unittest
 from mockito import mock, when, verify, verifyNoMoreInteractions, inorder
-from pyceed.operator import MultiFeed
+from pyceed.oper import MultiFeed
 
 
 class TestMultiFeed(unittest.TestCase):

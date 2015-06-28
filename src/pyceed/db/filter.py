@@ -2,7 +2,7 @@
 
 from pyceed.db.internals import DbException, _DbObject
 from pyceed.db.feed import Feed
-from pyceed.operator import *
+from pyceed.oper import MultiFeed, FeedSort, FeedTruncate, FeedRegex
 
 
 class FilterException(DbException):

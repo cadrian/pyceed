@@ -13,4 +13,7 @@ clean:
 	rm -f $(TESTS_FLAG)
 	$(shell find . -name __pycache__ -exec rm -rf {} +)
 
-.PHONY: all test
+run-update: $(FILES)
+	PYTHONPATH=$(shell pwd)/src:$(PYTHONPATH) python3 src/pyceed/update_feeds.py
+
+.PHONY: all test run-update

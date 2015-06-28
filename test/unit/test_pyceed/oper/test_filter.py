@@ -1,6 +1,6 @@
 import unittest
 from mockito import mock, when, verify, verifyNoMoreInteractions, inorder
-from pyceed.operator import FeedSort, FeedTruncate, FeedRegex
+from pyceed.oper import FeedSort, FeedTruncate, FeedRegex
 
 
 class TestFeedSort(unittest.TestCase):

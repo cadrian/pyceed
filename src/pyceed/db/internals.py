@@ -40,7 +40,7 @@ class _DbObject(object):
 				found = False
 				for row in ex:
 					for res in cls(transaction, rowid=row[0], **values):
-						yield res.update(**extra)
+						yield res._update(**extra)
 						found = True
 				if found and not insert:
 					return
@@ -86,15 +86,15 @@ class _DbObject(object):
 
 			instances[new_rowid] = result
 		else:
-			result.update(**values)
+			result._update(**values)
 
-		result.update(**extra)
+		result._update(**extra)
 		yield result
 
 	def __eq__(self, other):
 		return other is self
 
-	def update(self, **values):
+	def _update(self, **values):
 		for k,v in values.items():
 			setattr(self, k, v)
 		return self
