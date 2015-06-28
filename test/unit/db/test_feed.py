@@ -37,9 +37,13 @@ class TestFeed(unittest.TestCase):
 
 		self.assertFalse(feed_entry_2 is feed_entry_1)
 
-		when(self.transaction).select(FeedEntry, feedid=42).thenReturn([feed_entry_1, feed_entry_2])
+		def iter():
+			yield feed_entry_1
+			yield feed_entry_2
+		when(self.transaction).select_all(FeedEntry, feedid=42).thenReturn(iter())
 
-		entries = [e for e in feed.entries()]
+		entries_gen = feed.entries()
+		entries = [e for e in entries_gen]
 		self.assertEqual(2, len(entries))
 		self.assertTrue(feed_entry_1 in entries)
 		self.assertTrue(feed_entry_2 in entries)

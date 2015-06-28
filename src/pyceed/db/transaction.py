@@ -30,7 +30,6 @@ class Transaction(object):
 		* If insert=True, will always create a new object
 		* If insert=False, will never create a new object
 		"""
-		result = None
 		with self.__connection:
 			if rowid is None:
 				for obj in factory(transaction=self, insert=insert, **kw):

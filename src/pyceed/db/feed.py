@@ -18,8 +18,7 @@ class Feed(_DbObject):
 		return super(Feed, cls).__new__(cls, transaction, rowid, **data)
 
 	def entries(self):
-		for e in self.transaction.select(FeedEntry, feedid=self.rowid):
-			yield e
+		return self.transaction.select_all(FeedEntry, feedid=self.rowid)
 
 
 class FeedEntry(_DbObject):
