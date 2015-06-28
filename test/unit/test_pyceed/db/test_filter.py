@@ -21,7 +21,8 @@ class TestFilter(unittest.TestCase):
 	def _new_entry(self, published_day):
 		result = mock()
 		result.rowid = published_day
-		result.published = datetime.date(2015, 6, published_day)
+		result.definition = mock()
+		result.definition.published = datetime.date(2015, 6, published_day)
 		return result
 
 	def test_entries(self):

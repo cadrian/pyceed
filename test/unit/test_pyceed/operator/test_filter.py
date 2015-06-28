@@ -10,9 +10,11 @@ class TestFeedSort(unittest.TestCase):
 
 	def test_entries(self):
 		foo = mock()
-		foo.data = "foo"
+		foo.definition = mock()
+		foo.definition.data = "foo"
 		bar = mock()
-		bar.data = "bar"
+		bar.definition = mock()
+		bar.definition.data = "bar"
 
 		def iterentries():
 			yield foo
@@ -33,9 +35,11 @@ class TestFeedTruncate(unittest.TestCase):
 
 	def test_entries(self):
 		foo = mock()
-		foo.data = "foo"
+		foo.definition = mock()
+		foo.definition.data = "foo"
 		bar = mock()
-		bar.data = "bar"
+		bar.definition = mock()
+		bar.definition.data = "bar"
 
 		def iterentries():
 			yield foo
@@ -56,13 +60,17 @@ class TestFeedRegex(unittest.TestCase):
 
 	def test_entries(self):
 		foo = mock()
-		foo.data = "foo"
+		foo.definition = mock()
+		foo.definition.data = "foo"
 		bar = mock()
-		bar.data = "bar"
+		bar.definition = mock()
+		bar.definition.data = "bar"
 		baz = mock()
-		baz.data = "baz"
+		baz.definition = mock()
+		baz.definition.data = "baz"
 		ebaz = mock()
-		ebaz.data = "ebaz"
+		ebaz.definition = mock()
+		ebaz.definition.data = "ebaz"
 
 		def iterentries():
 			yield baz

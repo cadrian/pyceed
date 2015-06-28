@@ -13,7 +13,7 @@ class FeedSort(object):
 	def entries(self):
 		for entry in sorted(
 				self._feed.entries(),
-				key=lambda e: getattr(e, self._field),
+				key=lambda e: getattr(e.definition, self._field),
 				reverse=self._reverse,
 		):
 			yield entry
@@ -50,5 +50,5 @@ class FeedRegex(object):
 
 	def entries(self):
 		for entry in self._feed.entries():
-			if self._pattern.fullmatch(getattr(entry, self._field)):
+			if self._pattern.fullmatch(getattr(entry.definition, self._field)):
 				yield entry
