@@ -2,21 +2,41 @@ import unittest
 from mockito import mock, when, verify, verifyNoMoreInteractions, inorder, any
 from pyceed.db.transaction import Transaction
 
-class CallableMock(object):
-	def __init__(self, m=None):
-		self.mock = m or mock()
 
-	def __call__(self, *a, **kw):
-		return self.mock.__call__(*a, **kw)
+def callable_mock(m=None):
+	if m is None:
+		m = mock()
 
-	def __enter__(self):
-		return self.mock.__enter__()
+	class Mock(object):
+		mock = m
 
-	def __exit__(self, *a, **kw):
-		return self.mock.__exit__(*a, **kw)
+		def __new__(self, *a, **kw):
+			return m.new(*a, **kw)
 
-	def __getattr__(self, method_name):
-		return self.mock.__getattr__(method_name)
+		def __getattr__(self, method_name):
+			return m.__getattr__(method_name)
+
+	return Mock
+
+
+def managed_mock(m=None):
+	if m is None:
+		m = mock()
+
+	class Mock(object):
+		mock = m
+
+		def __enter__(self):
+			return m.__enter__()
+
+		def __exit__(self, *a, **kw):
+			return m.__exit__(*a, **kw)
+
+		def __getattr__(self, method_name):
+			return m.__getattr__(method_name)
+
+	return Mock()
+
 
 class TestTransaction(unittest.TestCase):
 	"""
@@ -24,8 +44,8 @@ class TestTransaction(unittest.TestCase):
 	"""
 
 	def setUp(self):
-		self.factory = CallableMock()
-		self.connection = CallableMock()
+		self.factory = callable_mock()
+		self.connection = managed_mock()
 		self.cursor = mock()
 		when(self.connection.mock).cursor().thenReturn(self.cursor)
 
@@ -36,7 +56,7 @@ class TestTransaction(unittest.TestCase):
 		transaction = Transaction(self.connection)
 		inorder.verify(self.connection.mock).cursor()
 
-		when(self.factory.mock).__call__(transaction=transaction, rowid=42, insert=None, x="foo").thenReturn(iterx())
+		when(self.factory.mock).new(transaction=transaction, rowid=42, insert=None, x="foo").thenReturn(iterx())
 
 		fdo = transaction.select(self.factory, rowid=42, x="foo")
 
@@ -53,7 +73,7 @@ class TestTransaction(unittest.TestCase):
 		transaction = Transaction(self.connection)
 		inorder.verify(self.connection.mock).cursor()
 
-		when(self.factory.mock).__call__(transaction=transaction, insert=None, x="foo").thenReturn(iterx())
+		when(self.factory.mock).new(transaction=transaction, insert=None, x="foo").thenReturn(iterx())
 
 		fdo = next(transaction.select_all(self.factory, x="foo"))
 
@@ -71,7 +91,7 @@ class TestTransaction(unittest.TestCase):
 		transaction = Transaction(self.connection)
 		instances = {42: fdo}
 		transaction._map[object] = instances
-		when(self.factory.mock).__call__(transaction=transaction, x="foo").thenReturn(fdo)
+		when(self.factory.mock).new(transaction=transaction, x="foo").thenReturn(fdo)
 
 		transaction.commit()
 
@@ -89,10 +109,14 @@ class TestTransaction(unittest.TestCase):
 		transaction = Transaction(self.connection)
 		instances = {42: fdo}
 		transaction._map[object] = instances
-		when(self.factory.mock).__call__(transaction=transaction, x="foo").thenReturn(fdo)
+		when(self.factory.mock).new(transaction=transaction, x="foo").thenReturn(fdo)
 
 		transaction.rollback()
 
 		inorder.verify(self.connection.mock).cursor()
 		inorder.verify(fdo).rollback()
 		verifyNoMoreInteractions(fdo, self.factory.mock, self.connection.mock)
+
+
+if __name__ == '__main__':
+	unittest.main()

@@ -2,8 +2,10 @@ import unittest
 from mockito import mock, when, verify, verifyNoMoreInteractions, inorder
 from pyceed.db.internals import _DbObject
 
+
 class FakeDbObject(_DbObject):
 	_columns = ("timestamp", "value")
+
 
 class TestDbObject(unittest.TestCase):
 	"""
@@ -137,7 +139,8 @@ class TestDbObject(unittest.TestCase):
 		self.assertEqual("ts13", fdo1.timestamp)
 		self.assertEqual("foobar", fdo1.value)
 
-		self.assertRaises(StopIteration, next, fdos)
+		with self.assertRaises(StopIteration):
+			next(fdos)
 
 
 if __name__ == '__main__':

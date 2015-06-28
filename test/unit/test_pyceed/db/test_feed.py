@@ -2,6 +2,7 @@ import unittest
 from mockito import mock, when, verify, verifyNoMoreInteractions, inorder
 from pyceed.db import Feed, FeedEntry, FeedException
 
+
 class TestFeed(unittest.TestCase):
 	"""
 	Test Feed and FeedEntry
@@ -16,7 +17,8 @@ class TestFeed(unittest.TestCase):
 		when(self.cursor).getconnection().thenReturn(self.connection)
 
 	def test_create_feed_no_url(self):
-		self.assertRaises(FeedException, Feed, self.transaction)
+		with self.assertRaises(FeedException):
+			Feed(self.transaction)
 
 	def test_create_feed(self):
 		when(self.connection).last_insert_rowid().thenReturn(42).thenReturn(1).thenReturn(13).thenReturn(None)
@@ -47,3 +49,7 @@ class TestFeed(unittest.TestCase):
 		self.assertEqual(2, len(entries))
 		self.assertTrue(feed_entry_1 in entries)
 		self.assertTrue(feed_entry_2 in entries)
+
+
+if __name__ == '__main__':
+	unittest.main()
