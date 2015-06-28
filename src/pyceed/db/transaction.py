@@ -18,7 +18,7 @@ class Transaction(object):
 		Register and return that object.
 		"""
 		with self.__connection:
-			return factory(transaction=self, rowid=rowid, insert=None, **kw)
+			return next(factory(transaction=self, rowid=rowid, insert=None, **kw))
 
 	def select_all(self, factory, rowid=None, insert=None, **kw):
 		"""

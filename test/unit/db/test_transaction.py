@@ -34,13 +34,31 @@ class TestTransaction(unittest.TestCase):
 		def iterx():
 			yield x
 		transaction = Transaction(self.connection)
-		when(self.factory.mock).__call__(transaction=transaction, insert=None, x="foo").thenReturn([x])
+		inorder.verify(self.connection.mock).cursor()
+
+		when(self.factory.mock).__call__(transaction=transaction, rowid=42, insert=None, x="foo").thenReturn(iterx())
+
+		fdo = transaction.select(self.factory, rowid=42, x="foo")
+
+		self.assertTrue(fdo is x)
+
+		inorder.verify(self.connection.mock).__enter__()
+		inorder.verify(self.connection.mock).__exit__(any(), any(), any())
+		verifyNoMoreInteractions(self.connection.mock)
+
+	def test_select_all(self):
+		x = object()
+		def iterx():
+			yield x
+		transaction = Transaction(self.connection)
+		inorder.verify(self.connection.mock).cursor()
+
+		when(self.factory.mock).__call__(transaction=transaction, insert=None, x="foo").thenReturn(iterx())
 
 		fdo = next(transaction.select_all(self.factory, x="foo"))
 
 		self.assertTrue(fdo is x)
 
-		inorder.verify(self.connection.mock).cursor()
 		inorder.verify(self.connection.mock).__enter__()
 		inorder.verify(self.connection.mock).__exit__(any(), any(), any())
 		verifyNoMoreInteractions(self.connection.mock)
