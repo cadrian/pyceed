@@ -7,7 +7,7 @@ all: test
 test: $(TESTS_FLAG)
 
 %.flag: %.py $(FILES)
-	PYTHONPATH=$(shell pwd)/src::$(PYTHONPATH) python3 $< && touch $@
+	PYTHONPATH=$(shell pwd)/src:$(PYTHONPATH) python3 $< && touch $@
 
 clean:
 	rm -f $(TESTS_FLAG)

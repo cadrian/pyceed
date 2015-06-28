@@ -13,7 +13,7 @@ class FeedSort(object):
 	def entries(self):
 		for entry in sorted(
 				self._feed.entries(),
-				key=lambda entry: getattr(entry, self._field),
+				key=lambda e: getattr(e, self._field),
 				reverse=self._reverse,
 		):
 			yield entry

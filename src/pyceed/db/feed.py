@@ -1,6 +1,7 @@
 # Feed
 
 from pyceed.db.internals import DbException, _DbObject
+import pickle
 
 
 class FeedException(DbException):
@@ -22,9 +23,9 @@ class Feed(_DbObject):
 
 
 class FeedEntry(_DbObject):
-	_columns = ("author", "updated", "published", "summary", "content", "feedid")
+	_columns = ("definition", "feedid")
 
-	def __new__(cls, transaction, rowid=None, feed=None, feedid=None, **data):
+	def __new__(cls, transaction, rowid=None, definition=None, feed=None, feedid=None, **data):
 		if rowid is None:
 			if feed is None:
 				if feedid is None:
@@ -39,16 +40,23 @@ class FeedEntry(_DbObject):
 			data["feedid"] = feedid
 		if feed is not None:
 			data["feed"] = feed
+		if definition is not None:
+			data["definition"] = pickle.dumps(definition)
 		return super(FeedEntry, cls).__new__(cls, transaction, rowid, **data)
 
 	def __getattr__(self, name):
 		if name == "feed":
 			return self.__feed
-		return super(FeedEntry, self).__getattr__(name)
+		elif name == "definition":
+			definition = super(FeedEntry, self).__getattr__(name)
+			if definition is not None:
+				return pickle.loads(definition)
+		else:
+			return super(FeedEntry, self).__getattr__(name)
 
 	def __setattr__(self, name, value):
 		if name == "feed":
 			self.__feed = value
-			self.feedid = value.rowid
+			super(FeedEntry, self).__setattr__(name, value.rowid)
 		else:
 			super(FeedEntry, self).__setattr__(name, value)

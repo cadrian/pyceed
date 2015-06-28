@@ -5,13 +5,13 @@ class MultiFeed(object):
 	No warranty on the order of the entries from each field.
 	"""
 
-	def __init__(self):
-		self._feeds = {}
+	def __init__(self, *feeds):
+		self._feeds = list(feeds)
 
 	def add_feed(self, feed):
-		self._feeds[feed.rowid] = feed
+		self._feeds.append(feed)
 
 	def entries(self):
-		for feed in self._feeds.values():
+		for feed in self._feeds:
 			for entry in feed.entries():
 				yield entry

@@ -1,6 +1,5 @@
 # Transaction: a central point of control for database objects with commit / rollback management
 
-from pyceed.db.internals import DbException, _DbObject
 
 
 class Transaction(object):
