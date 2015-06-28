@@ -2,6 +2,7 @@
 
 from pyceed.db.internals import DbException, _DbObject
 import pickle
+import feedparser
 
 
 class FeedException(DbException):
@@ -9,7 +10,7 @@ class FeedException(DbException):
 
 
 class Feed(_DbObject):
-	_columns = ("url", "etag")
+	_columns = ("url", "etag", "modified")
 
 	def __new__(cls, transaction, rowid=None, url=None, **data):
 		if rowid is None:
@@ -21,9 +22,28 @@ class Feed(_DbObject):
 	def entries(self):
 		return self.transaction.select_all(FeedEntry, feedid=self.rowid)
 
+	def _feed(self):
+		if self.etag is None:
+			if self.modified is None:
+				feed = feedparser.parse(url)
+			else:
+				feed = feedparser.parse(url, modified=self.modified)
+		else:
+			feed = feedparser.parse(url, etag=self.etag)
+
+		self.etag = feed.etag
+		self.modified = feed.modified
+		return feed
+
+	def update(self):
+		feed = self._feed()
+		for entry in feed.entries:
+			e = transaction.select_unique(FeedEntry, id=entry.id, feedid=self.rowid)
+			e.update(definition=entry)
+
 
 class FeedEntry(_DbObject):
-	_columns = ("definition", "feedid")
+	_columns = ("definition", "id", "feedid")
 
 	def __new__(cls, transaction, rowid=None, definition=None, feed=None, feedid=None, **data):
 		if rowid is None:

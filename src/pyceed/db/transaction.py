@@ -1,6 +1,9 @@
 # Transaction: a central point of control for database objects with commit / rollback management
 
 
+class TransactionException(Exception):
+	pass
+
 
 class Transaction(object):
 	def __init__(self, connection):
@@ -18,6 +21,18 @@ class Transaction(object):
 		"""
 		with self.__connection:
 			return next(factory(transaction=self, rowid=rowid, insert=None, **kw))
+
+	def select_unique(self, factory, rowid=None, insert=None, **kw):
+		"""
+		Return a unique row, or None
+		"""
+		result = None
+		for r in self.select_all(factory, rowid=rowid, insert=insert, **kw):
+			if result is None:
+				result = r
+			else:
+				raise TransactionException("not unique")
+		return result
 
 	def select_all(self, factory, rowid=None, insert=None, **kw):
 		"""

@@ -18,6 +18,9 @@ class FeedSort(object):
 		):
 			yield entry
 
+	def update(self):
+		self._feed.update()
+
 
 class FeedTruncate(object):
 	"""
@@ -37,6 +40,9 @@ class FeedTruncate(object):
 			else:
 				break
 
+	def update(self):
+		self._feed.update()
+
 
 class FeedRegex(object):
 	"""
@@ -52,3 +58,6 @@ class FeedRegex(object):
 		for entry in self._feed.entries():
 			if self._pattern.fullmatch(getattr(entry.definition, self._field)):
 				yield entry
+
+	def update(self):
+		self._feed.update()

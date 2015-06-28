@@ -15,3 +15,7 @@ class MultiFeed(object):
 		for feed in self._feeds:
 			for entry in feed.entries():
 				yield entry
+
+	def update(self):
+		for feed in self._feeds:
+			feed.update()

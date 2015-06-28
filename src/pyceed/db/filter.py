@@ -19,15 +19,20 @@ class Filter(_DbObject):
 		data["definition"] = definition
 		return super(Filter, cls).__new__(cls, transaction, rowid, **data)
 
-	def entries(self):
+	def _filter(self):
 		def get_feed(url):
 			result = next(self.transaction.select_all(Feed, url=url))
 			return result
-		fil = eval(self.definition, {
+		return eval(self.definition, {
 			"Feed": get_feed,
 			"Union": MultiFeed,
 			"Sort": FeedSort,
 			"Truncate": FeedTruncate,
 			"Regex": FeedRegex,
 		})
-		return fil.entries()
+
+	def entries(self):
+		return self._filter().entries()
+
+	def update(self):
+		self._filter().update()
