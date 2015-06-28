@@ -17,8 +17,8 @@ class TestMultiFeed(unittest.TestCase):
 		x.rowid = 1
 
 		def itery():
-			yield 1
-			yield 2
+			yield 'baz'
+			yield 'zip'
 		y = mock()
 		y.entries = itery
 		y.rowid = 2
@@ -28,7 +28,7 @@ class TestMultiFeed(unittest.TestCase):
 		multi.add_feed(y)
 
 		entries = [entry for entry in multi.entries()]
-		self.assertEqual(["foo", "bar", 1, 2], entries)
+		self.assertEqual(["bar", "baz", "foo", "zip"], sorted(entries))
 
 
 if __name__ == '__main__':

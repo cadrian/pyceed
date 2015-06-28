@@ -1,6 +1,8 @@
 class MultiFeed(object):
 	"""
 	Gather one or more feeds
+
+	No warranty on the order of the entries from each field.
 	"""
 
 	def __init__(self):
