@@ -10,7 +10,7 @@ class FilterException(DbException):
 
 
 class Filter(_DbObject):
-	_columns = ("name", "definition")
+	_columns = ("name", "definition", "title", "subtitle")
 
 	def __new__(cls, transaction, rowid=None, definition=None, name=None, insert=None, **data):
 		if rowid is None and insert is True:

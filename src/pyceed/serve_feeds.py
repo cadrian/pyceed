@@ -47,9 +47,11 @@ def getApp(root="/"):
 	@app.post(root + "config/<filtername>")
 	def config_filter(filtername):
 		try:
-			definition = request.forms.get("definition") or ""
-			filter = trn.select_unique(Filter, name=filtername, definition=definition)
-			filter.update()
+			fil = trn.select_unique(Filter, name=filtername)
+			fil.definition = request.forms.get("definition") or ""
+			fil.title = request.forms.get("title") or ""
+			fil.subtitle = request.forms.get("subtitle") or ""
+			fil.update()
 			trn.commit()
 		except:
 			logging.exception("config_filter failed for filter %s" % (filtername,))
@@ -65,8 +67,8 @@ def getApp(root="/"):
 			raise
 
 		out_feed = FeedGenerator()
-		out_feed.title("TITLE")
-		out_feed.subtitle("SUBTITLE")
+		out_feed.title(fil.title)
+		out_feed.subtitle(fil.subtitle)
 		out_feed.id(filtername)
 
 		for entry in fil.entries():
