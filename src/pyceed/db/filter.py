@@ -37,7 +37,7 @@ class Filter(_DbObject):
 		})
 
 	def entries(self):
-		return self._filter().entries()
+		yield from self._filter().entries()
 
 	def update(self):
 		self._filter().update()

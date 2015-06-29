@@ -33,12 +33,14 @@ class FeedTruncate(object):
 
 	def entries(self):
 		count = 0
-		for entry in self._feed.entries():
+		f = self._feed.entries()
+		for entry in f:
 			if count < self._limit:
 				yield entry
 				count += 1
 			else:
 				break
+		list(f)
 
 	def update(self):
 		self._feed.update()
@@ -55,9 +57,11 @@ class FeedRegex(object):
 		self._pattern = re.compile(regex, flags=flags)
 
 	def entries(self):
-		for entry in self._feed.entries():
+		f = self._feed.entries()
+		for entry in f:
 			if self._pattern.fullmatch(getattr(entry.definition, self._field)):
 				yield entry
+		list(f)
 
 	def update(self):
 		self._feed.update()

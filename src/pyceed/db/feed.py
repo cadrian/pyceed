@@ -22,7 +22,7 @@ class Feed(_DbObject):
 		return super(Feed, cls).__new__(cls, transaction, rowid, **data)
 
 	def entries(self):
-		return self.transaction.select_all(FeedEntry, feedid=self.rowid)
+		yield from self.transaction.select_all(FeedEntry, feedid=self.rowid, insert=False)
 
 	def _feed(self):
 		feed = feedparser.parse(self.url, etag=self.etag, modified=self.modified)

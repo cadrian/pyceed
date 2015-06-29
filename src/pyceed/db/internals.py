@@ -1,4 +1,4 @@
-import sys, traceback
+import logging
 
 class DbException(Exception):
 	pass
@@ -25,14 +25,15 @@ class _DbObject(object):
 		Otherwise, will either yield the object if it exists in the database, or nothing
 		"""
 		try:
-			return cls.__select_or_insert(transaction, rowid=rowid, insert=insert, **values)
+			yield from cls.__select_or_insert(transaction, rowid=rowid, insert=insert, **values)
 		except:
-			traceback.print_exc(file=sys.stdout)
+			logging.exception("new %s", cls.__name__)
 			raise
 
 	@classmethod
 	def __select_or_insert(cls, transaction, rowid=None, insert=None, **values):
 		result = None
+		cursor = transaction.cursor
 
 		#print("\n~~>~~ %s(rowid=%s, insert=%s, %s)" % (cls.__name__, rowid, insert, values))
 
@@ -49,7 +50,7 @@ class _DbObject(object):
 				 ", ".join(cls._columnname(c) for c in columns),
 			)
 			#print(">>>> " + query)
-			transaction.cursor.execute(query)
+			cursor.execute(query)
 
 		if rowid is None:
 			if values:
@@ -62,11 +63,12 @@ class _DbObject(object):
 					cls._tablename(),
 				)
 			#print(">>>> " + query + "\n" + str(values))
-			ex = transaction.cursor.execute(query, values)
+			ex = cursor.execute(query, values)
 			if ex:
 				found = False
 				for row in ex:
-					for res in cls(transaction, rowid=row[0], **values):
+					for res in cls(transaction, rowid=row[0], insert=False, **values):
+						logging.debug("++++ %s", res)
 						yield res._update(**extra)
 						found = True
 				if found and not insert:
@@ -89,9 +91,8 @@ class _DbObject(object):
 					", ".join(":%s" % (k,) for k in columns),
 				)
 				#print(">>>> " + query + "\n" + str(data))
-				cur = transaction.cursor
-				cur.execute(query, data)
-				new_rowid = cur.getconnection().last_insert_rowid()
+				cursor.execute(query, data)
+				new_rowid = cursor.getconnection().last_insert_rowid()
 			else:
 				new_rowid = rowid
 				query = "select %s from %s where rowid = ?" % (
@@ -99,9 +100,11 @@ class _DbObject(object):
 					cls._tablename(),
 				)
 				#print(">>>> " + query + "\nrowid=" + str(rowid))
-				for row in transaction.cursor.execute(query, (rowid,)):
+				rows = cursor.execute(query, (rowid,))
+				for row in rows:
 					for i, col in enumerate(columns):
 						data[col] = row[i]
+					list(rows)
 					break
 				else:
 					# Don't insert a new row if the rowid is provided; in that case,
