@@ -16,7 +16,8 @@ class Feed(_DbObject):
 		if rowid is None and insert is True:
 			if url is None:
 				raise FeedException("url is needed")
-		data["url"] = url
+		if url is not None:
+			data["url"] = url
 		data["insert"] = insert
 		return super(Feed, cls).__new__(cls, transaction, rowid, **data)
 

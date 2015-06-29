@@ -18,8 +18,10 @@ class Filter(_DbObject):
 				raise FilterException("definition is needed")
 			if name is None:
 				raise FilterException("name is needed")
-		data["name"] = name
-		data["definition"] = definition
+		if name is not None:
+			data["name"] = name
+		if definition is not None:
+			data["definition"] = definition
 		data["insert"] = insert
 		return super(Filter, cls).__new__(cls, transaction, rowid, **data)
 

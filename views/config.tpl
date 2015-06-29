@@ -4,7 +4,7 @@
     %if filters:
     <script>
       function select_new() {
-        document.getElementById("config_name").value = "_new";
+        document.getElementById("cn_new").checked = true;
       }
     </script>
     %end
@@ -13,20 +13,17 @@
     <h1>PyCeed feeds configuration</h1>
     <p>Please choose a feed configuration or type a feed name</p>
     <form action="{{root}}config" method="post">
-      %if filters:
-      <ul>
-        <select name="config_name" size="{{len(filters) + 1}}">
-          %for filter in filters:
-          <li><option value="{{filter.name}}">{{filter.name}}</option></li>
-          %end
-          <li><option value="_new"><input name="config_name_text" type="text" onkeydown="select_new();" oncut="select_new();" onpaste="select_new();"/></option></li>
-        </select>
-      </ul>
-      %else:
       <p>
+        %if filters:
+        %for filter in filters:
+        <input type="radio" name="config_name" value="{{filter.name}}" />{{filter.name}}<br />
+        %end
+        <br />
+        <input type="radio" name="config_name" id="cn_new" value="_new" />New feed: <input name="config_name_text" type="text" onkeydown="select_new();" oncut="select_new();" onpaste="select_new();" /><br />
+        %else:
         <input name="config_name_text" type="text" />
+        %end
       </p>
-      %end
       <input value="View feed" type="submit" />
     </form>
   </body>

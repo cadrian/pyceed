@@ -55,7 +55,7 @@ class _DbObject(object):
 			if values:
 				query = "select rowid from %s where %s" % (
 					cls._tablename(),
-					" and ".join('%s = :%s' % (cls._columnname(k),k) for k in values.keys()),
+					" and ".join('%s = :%s' % (cls._columnname(k),k) for k,v in values.items()),
 				)
 			else:
 				query = "select rowid from %s" % (
