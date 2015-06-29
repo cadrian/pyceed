@@ -6,6 +6,9 @@ all: test
 
 test: $(TESTS_FLAG)
 
+dep:
+	install-deps.sh
+
 %.flag: %.py $(FILES)
 	PYTHONPATH=$(shell pwd)/src:$(PYTHONPATH) python3 $< && touch $@
 
@@ -19,4 +22,4 @@ run-update: $(FILES)
 run-server: $(FILES)
 	PYTHONPATH=$(shell pwd)/src:$(PYTHONPATH) python3 src/pyceed/serve_feeds.py
 
-.PHONY: all test run-update run-server
+.PHONY: all test dep run-update run-server
