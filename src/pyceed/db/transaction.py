@@ -11,7 +11,6 @@ class Transaction(object):
 		Create a new transaction bound to the given connection which must be compatible with apsw's
 		"""
 		self.__connection = connection
-		self.__cursor = connection.cursor()
 		self._map = {}
 
 	def select(self, factory, rowid, **kw):
@@ -31,7 +30,9 @@ class Transaction(object):
 			if result is None:
 				result = r
 			else:
-				raise TransactionException("not unique")
+				kw["rowid"] = rowid
+				kw["insert"] = insert
+				raise TransactionException("not unique: %s%s" % (factory.__name__, kw))
 		return result
 
 	def select_all(self, factory, rowid=None, insert=None, **kw):
@@ -63,8 +64,9 @@ class Transaction(object):
 		"""
 		Rollback all the registered objects
 		"""
-		for obj in self.items():
-			obj.rollback()
+		with self.__connection:
+			for obj in self.items():
+				obj.rollback()
 
 	def items(self):
 		"""
@@ -74,8 +76,16 @@ class Transaction(object):
 			for instance in instances.values():
 				yield instance
 
+	def _trace(self, cursor, sql, bindings):
+		print(">>>> " + sql)
+		if bindings:
+			print(".... " + str(bindings))
+		return True
+
 	def __getattr__(self, name):
 		if name == "cursor":
-			return self.__cursor
+			cursor = self.__connection.cursor()
+			cursor.setexectrace(self._trace)
+			return cursor
 		else:
 			return super(Transaction, self).__getattr__(name)

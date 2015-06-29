@@ -7,6 +7,10 @@ class _DbObject(object):
 	Parent of all database objects.
 	"""
 
+	@classmethod
+	def _tablename(cls):
+		return "PyCeed" + cls.__name__
+
 	def __new__(cls, transaction, rowid=None, insert=None, **values):
 		"""
 		Make sure that an instance with a given rowid is always the same instance.
@@ -24,16 +28,16 @@ class _DbObject(object):
 		instances = transaction._map.get(cls, None)
 		if instances is None:
 			instances = transaction._map[cls] = dict()
-			query = "create table if not exists %s (%s)" % (
-				cls.__name__,
+			query = "create table %s (%s);" % (
+				cls._tablename(),
 				 ", ".join(columns),
 			)
 			transaction.cursor.execute(query)
 
 		if rowid is None:
 			if values:
-				query = "select rowid from %s where %s" % (
-					cls.__name__,
+				query = "select rowid from %s where %s;" % (
+					cls._tablename(),
 					" and ".join("%s = :%s" % (k,k) for k in values.keys()),
 				)
 				ex = transaction.cursor.execute(query, values)
@@ -54,18 +58,19 @@ class _DbObject(object):
 				if insert is False:
 					return
 				data.update(values)
-				query = "insert into %s (%s) values (%s)" % (
-					cls.__name__,
+				query = "insert into %s (%s) values (%s);" % (
+					cls._tablename(),
 					", ".join(columns),
 					", ".join(":%s" % (k,) for k in columns),
 				)
-				transaction.cursor.execute(query, data)
-				new_rowid = transaction.cursor.getconnection().last_insert_rowid()
+				cur = transaction.cursor
+				cur.execute(query, data)
+				new_rowid = cur.getconnection().last_insert_rowid()
 			else:
 				new_rowid = rowid
-				query = "select %s from %s where rowid = ?" % (
+				query = "select %s from %s where rowid = ?;" % (
 					", ".join(columns),
-					cls.__name__,
+					cls._tablename(),
 				)
 				for row in transaction.cursor.execute(query, (
 						rowid,
@@ -103,8 +108,8 @@ class _DbObject(object):
 		if self.__olddata != self.__data:
 			data = {k:v for k,v in self.__data.items() if v != self.__olddata[k]}
 			data["rowid"] = self.__rowid
-			query = "update %s set %s where rowid = :rowid" % (
-				type(self).__name__,
+			query = "update %s set %s where rowid = :rowid;" % (
+				self._tablename(),
 				", ".join("%s = :%s" % (k,k) for k in self._columns if k in data),
 			)
 			self.transaction.cursor.execute(query, data)

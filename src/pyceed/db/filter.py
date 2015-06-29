@@ -12,11 +12,15 @@ class FilterException(DbException):
 class Filter(_DbObject):
 	_columns = ("name", "definition")
 
-	def __new__(cls, transaction, rowid=None, definition=None, **data):
+	def __new__(cls, transaction, rowid=None, definition=None, name=None, insert=None, **data):
 		if rowid is None:
-			if definition is None:
-				raise FilterException("url is needed")
+			if definition is None and insert is True:
+				raise FilterException("definition is needed")
+			if name is None and insert is True:
+				raise FilterException("name is needed")
+		data["name"] = name
 		data["definition"] = definition
+		data["insert"] = insert
 		return super(Filter, cls).__new__(cls, transaction, rowid, **data)
 
 	def _filter(self):

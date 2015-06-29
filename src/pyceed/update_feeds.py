@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 
-from pyceed.db import Transaction, Feed
-
 import apsw
 
+from pyceed.db import Transaction, Filter
 from pyceed.config import connection
 
 def update_all():

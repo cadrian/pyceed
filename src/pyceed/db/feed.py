@@ -23,23 +23,16 @@ class Feed(_DbObject):
 		return self.transaction.select_all(FeedEntry, feedid=self.rowid)
 
 	def _feed(self):
-		if self.etag is None:
-			if self.modified is None:
-				feed = feedparser.parse(url)
-			else:
-				feed = feedparser.parse(url, modified=self.modified)
-		else:
-			feed = feedparser.parse(url, etag=self.etag)
-
-		self.etag = feed.etag
-		self.modified = feed.modified
+		feed = feedparser.parse(self.url, etag=self.etag, modified=self.modified)
+		self.etag = getattr(feed, 'etag', None)
+		self.modified = getattr(feed, 'modified', None)
 		return feed
 
 	def update(self):
 		feed = self._feed()
 		for entry in feed.entries:
-			e = transaction.select_unique(FeedEntry, id=entry.id, feedid=self.rowid)
-			e.update(definition=entry)
+			e = self.transaction.select_unique(FeedEntry, id=entry.id, feed=self)
+			e._update(definition=entry)
 
 
 class FeedEntry(_DbObject):
@@ -51,7 +44,7 @@ class FeedEntry(_DbObject):
 				if feedid is None:
 					raise FeedException("feed or feedid is needed")
 				else:
-					feed = Feed(cursor=transaction, rowid=feedid)
+					feed = Feed(transaction=transaction, rowid=feedid)
 			elif feedid is None:
 				feedid = feed.rowid
 			elif feed.rowid != feedid:
@@ -78,5 +71,7 @@ class FeedEntry(_DbObject):
 		if name == "feed":
 			self.__feed = value
 			super(FeedEntry, self).__setattr__(name, value.rowid)
+		elif name == "definition":
+			super(FeedEntry, self).__setattr__(name, pickle.dumps(value))
 		else:
 			super(FeedEntry, self).__setattr__(name, value)
