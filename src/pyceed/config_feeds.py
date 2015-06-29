@@ -19,7 +19,7 @@ def getApp(root="/"):
 	@app.get(root + "config/")
 	@view("config")
 	def config():
-		filters = [f for f in trn.select_all(Filter, insert=False)]
+		filters = list(trn.select_all(Filter, insert=False))
 		return dict(
 			root=root,
 			filters=filters,
@@ -49,8 +49,6 @@ def getApp(root="/"):
 			definition = request.forms.get("definition") or ""
 			filter = trn.select_unique(Filter, name=filtername, definition=definition)
 			filter.update()
-			for feed in trn.select_all(Feed, insert=False):
-				feed.update()
 			trn.commit()
 		except:
 			logging.exception("config_filter failed for filter %s" % (filtername,))
@@ -61,5 +59,5 @@ def getApp(root="/"):
 
 
 if __name__ == '__main__':
-	logging.basicConfig(level=logging.DEBUG, format='%(asctime)s [%(levelname)s] <%(threadName)s> %(message)s')
+	logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] <%(threadName)s> %(message)s')
 	run(getApp("/"), host=host, port=port)

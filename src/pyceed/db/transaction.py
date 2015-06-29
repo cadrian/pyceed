@@ -58,10 +58,11 @@ class Transaction(object):
 		"""
 		with self:
 			if rowid is None:
-				for obj in factory(transaction=self, insert=insert, **kw):
-					yield obj
+				f = factory(transaction=self, insert=insert, **kw)
 			else:
-				yield factory(transaction=self, rowid=rowid, **kw)
+				f = factory(transaction=self, rowid=rowid, **kw)
+			for obj in f:
+				yield obj
 
 	def commit(self):
 		"""
