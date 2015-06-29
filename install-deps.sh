@@ -3,7 +3,7 @@
 cd $(dirname $(readlink -f $0))
 
 sudo aptitude update -q=2
-sudo aptitude install -q=2 python3 python3-pip python3-apsw python3-bottle python3-mockito
+sudo aptitude install -q=2 libxml2-dev python3 python3-pip python3-apsw python3-bottle python3-mockito
 
 sudo pip3 install feedgen --upgrade
 
