@@ -26,12 +26,6 @@ def getApp(root="/"):
 	app = Bottle()
 	trn = Transaction(connection)
 
-	@app.get(root + 'hello')
-	@app.get(root + 'hello/')
-	@app.get(root + 'hello/<name>')
-	def hello(name="World"):
-		return template('<b>Hello {{name}}</b>!', name=name)
-
 	@app.get(root + "config")
 	@app.get(root + "config/")
 	@view("config")
@@ -111,6 +105,7 @@ def getApp(root="/"):
 	return app
 
 
+app = application = getApp("/")
 if __name__ == '__main__':
-	logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] <%(threadName)s> %(message)s')
-	run(getApp("/"), host=host, port=port)
+	logging.basicConfig(level=logging.DEBUG, format='%(asctime)s [%(levelname)s] <%(threadName)s> %(message)s')
+	run(app, host=host, port=port)
