@@ -1,5 +1,5 @@
 import unittest
-from mockito import mock, when, verify, verifyNoMoreInteractions, inorder, any
+from mockito import mock, when, verify, verifyNoMoreInteractions, any
 from pyceed.db.transaction import Transaction
 
 
@@ -49,13 +49,11 @@ class TestTransaction(unittest.TestCase):
 		self.cursor = mock()
 		when(self.connection.mock).cursor().thenReturn(self.cursor)
 
-	@unittest.skip("blinking")
 	def test_select(self):
 		x = object()
 		def iterx():
 			yield x
 		transaction = Transaction(self.connection)
-		inorder.verify(self.connection.mock).cursor()
 
 		when(self.factory.mock).new(transaction=transaction, rowid=42, insert=None, x="foo").thenReturn(iterx())
 
@@ -63,27 +61,25 @@ class TestTransaction(unittest.TestCase):
 
 		self.assertTrue(fdo is x)
 
-		inorder.verify(self.connection.mock).__enter__()
-		inorder.verify(self.connection.mock).__exit__(any(), any(), any())
-		verifyNoMoreInteractions(self.connection.mock)
+		verify(self.connection.mock, atleast=1).__enter__()
+		verify(self.connection.mock, atleast=1).__exit__(any(), any(), any())
 
-	@unittest.skip("blinking")
 	def test_select_all(self):
 		x = object()
 		def iterx():
 			yield x
 		transaction = Transaction(self.connection)
-		inorder.verify(self.connection.mock).cursor()
 
 		when(self.factory.mock).new(transaction=transaction, insert=None, x="foo").thenReturn(iterx())
 
-		fdo = next(transaction.select_all(self.factory, x="foo"))
+		f = transaction.select_all(self.factory, insert=None, x="foo")
+		fdo = next(f)
+		self.assertEqual([], list(f))
 
 		self.assertTrue(fdo is x)
 
-		inorder.verify(self.connection.mock).__enter__()
-		inorder.verify(self.connection.mock).__exit__(any(), any(), any())
-		verifyNoMoreInteractions(self.connection.mock)
+		verify(self.connection.mock, atleast=1).__enter__()
+		verify(self.connection.mock, atleast=1).__exit__(any(), any(), any())
 
 	def test_commit(self):
 		fdo = mock()
@@ -97,11 +93,9 @@ class TestTransaction(unittest.TestCase):
 
 		transaction.commit()
 
-		inorder.verify(self.connection.mock).cursor()
-		inorder.verify(self.connection.mock).__enter__()
-		inorder.verify(fdo).commit()
-		inorder.verify(self.connection.mock).__exit__(None, None, None)
-		verifyNoMoreInteractions(fdo, self.factory.mock, self.connection.mock)
+		verify(self.connection.mock, atleast=1).__enter__()
+		verify(fdo).commit()
+		verify(self.connection.mock, atleast=1).__exit__(None, None, None)
 
 	def test_rollback(self):
 		fdo = mock()
@@ -115,9 +109,7 @@ class TestTransaction(unittest.TestCase):
 
 		transaction.rollback()
 
-		inorder.verify(self.connection.mock).cursor()
-		inorder.verify(fdo).rollback()
-		verifyNoMoreInteractions(fdo, self.factory.mock, self.connection.mock)
+		verify(fdo).rollback()
 
 
 if __name__ == '__main__':

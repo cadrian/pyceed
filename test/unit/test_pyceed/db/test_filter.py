@@ -28,6 +28,10 @@ class TestFilter(unittest.TestCase):
 	def test_entries(self):
 		definition = "Sort(Union(Truncate(Feed('foo/bar1'), 5), Truncate(Feed('foo/bar2'), 7)), 'published', reverse=True)"
 
+		def iter(*a):
+			for o in a:
+				yield (o,)
+
 		bar1entry1 = self._new_entry(11)
 		bar1entry2 = self._new_entry(22)
 		bar1entry3 = self._new_entry(13)
@@ -61,9 +65,7 @@ class TestFilter(unittest.TestCase):
 		feed1 = mock()
 		feed1.rowid = 1
 		when(feed1).entries().thenReturn(iter1entries())
-		def iter1():
-			yield feed1
-		when(self.transaction).select_all(Feed, url='foo/bar1').thenReturn(iter1())
+		when(self.transaction).select_unique(Feed, url='foo/bar1').thenReturn(feed1)
 
 		def iter2entries():
 			yield bar2entry1
@@ -78,23 +80,23 @@ class TestFilter(unittest.TestCase):
 		feed2 = mock()
 		feed2.rowid = 2
 		when(feed2).entries().thenReturn(iter2entries())
-		def iter2():
-			yield feed2
-		when(self.transaction).select_all(Feed, url='foo/bar2').thenReturn(iter2())
+		when(self.transaction).select_unique(Feed, url='foo/bar2').thenReturn(feed2)
 
 		self.transaction._map[Feed] = {
 			1: feed1,
 			2: feed2,
 		}
 
-		when(self.cursor).execute("select rowid from Filter where definition = :definition", {"definition": definition}).thenReturn([])
+		when(self.cursor).execute('select rowid from main."PyCeedFilter" where "Filter_name" = :name and "Filter_definition" = :definition', {"name": None, "definition": definition}).thenReturn(iter())
 		when(self.connection).last_insert_rowid().thenReturn(1)
-		when(self.cursor).execute("select rowid from Feed where url = :url", {"url": "foo/bar1"}).thenReturn([(1,)])
-		when(self.cursor).execute("select rowid from Feed where url = :url", {"url": "foo/bar2"}).thenReturn([(2,)])
+		when(self.cursor).execute('select rowid from main."PyCeedFeed" where "Feed_url" = :url', {"url": "foo/bar1"}).thenReturn(iter(1))
+		when(self.cursor).execute('select rowid from main."PyCeedFeed" where "Feed_url" = :url', {"url": "foo/bar2"}).thenReturn(iter(2))
 
-		f = next(Filter(self.transaction, definition=definition))
+		f = Filter(self.transaction, definition=definition)
+		fil = next(f)
+		self.assertEqual([], list(f))
 
-		entries = [e for e in f.entries()]
+		entries = [e for e in fil.entries()]
 		self.assertEqual([
 			bar2entry7, # = self._new_entry(27)
 			bar2entry5, # = self._new_entry(25)
@@ -109,6 +111,7 @@ class TestFilter(unittest.TestCase):
 			bar2entry2, # = self._new_entry(12)
 			bar1entry1, # = self._new_entry(11)
 		], entries)
+
 
 if __name__ == '__main__':
 	unittest.main()

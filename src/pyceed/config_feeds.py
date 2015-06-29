@@ -1,9 +1,8 @@
-import sys
-import traceback
+import logging
 
 from bottle import Bottle, run, template, request, response, redirect, view
 
-from pyceed.db import Transaction, Filter
+from pyceed.db import Transaction, Filter, Feed
 from pyceed.config import connection, host, port
 
 def getApp(root="/"):
@@ -47,13 +46,14 @@ def getApp(root="/"):
 	@app.post(root + "config/<filtername>")
 	def config_filter(filtername):
 		try:
-			print("**** filtername = " + filtername)
 			definition = request.forms.get("definition") or ""
 			filter = trn.select_unique(Filter, name=filtername, definition=definition)
 			filter.update()
+			for feed in trn.select_all(Feed, insert=False):
+				feed.update()
 			trn.commit()
 		except:
-			traceback.print_exc(file=sys.stdout)
+			logging.exception("config_filter failed for filter %s" % (filtername,))
 			trn.rollback()
 		return redirect(root + "config")
 
@@ -61,4 +61,5 @@ def getApp(root="/"):
 
 
 if __name__ == '__main__':
+	logging.basicConfig(level=logging.DEBUG, format='%(asctime)s [%(levelname)s] <%(threadName)s> %(message)s')
 	run(getApp("/"), host=host, port=port)

@@ -13,10 +13,10 @@ class Filter(_DbObject):
 	_columns = ("name", "definition")
 
 	def __new__(cls, transaction, rowid=None, definition=None, name=None, insert=None, **data):
-		if rowid is None:
-			if definition is None and insert is True:
+		if rowid is None and insert is True:
+			if definition is None:
 				raise FilterException("definition is needed")
-			if name is None and insert is True:
+			if name is None:
 				raise FilterException("name is needed")
 		data["name"] = name
 		data["definition"] = definition
@@ -25,8 +25,7 @@ class Filter(_DbObject):
 
 	def _filter(self):
 		def get_feed(url):
-			result = next(self.transaction.select_all(Feed, url=url))
-			return result
+			return self.transaction.select_unique(Feed, url=url)
 		return eval(self.definition, {
 			"Feed": get_feed,
 			"Union": MultiFeed,

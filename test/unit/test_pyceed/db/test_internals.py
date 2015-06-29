@@ -1,5 +1,5 @@
 import unittest
-from mockito import mock, when, verify, verifyNoMoreInteractions, inorder
+from mockito import mock, when, verify, verifyNoMoreInteractions
 from pyceed.db.internals import _DbObject
 
 
@@ -23,16 +23,18 @@ class TestDbObject(unittest.TestCase):
 	def test_create_empty(self):
 		when(self.connection).last_insert_rowid().thenReturn(42)
 
-		fdo = next(FakeDbObject(self.transaction))
+		f = FakeDbObject(self.transaction)
+		fdo = next(f)
+		self.assertEqual([], list(f))
 
-		inorder.verify(self.cursor, times=1).execute("create table if not exists FakeDbObject (timestamp, value)")
-		inorder.verify(self.cursor, times=1).execute("insert into FakeDbObject (timestamp, value) values (:timestamp, :value)", {
+		verify(self.cursor, times=1).execute('create table if not exists main."PyCeedFakeDbObject" ("FakeDbObject_timestamp", "FakeDbObject_value")')
+		verify(self.cursor, times=1).execute('insert into main."PyCeedFakeDbObject" ("FakeDbObject_timestamp", "FakeDbObject_value") values (:timestamp, :value)', {
 			"timestamp": None,
 			"value": None,
 		})
-		inorder.verify(self.cursor, times=1).getconnection()
-		inorder.verify(self.connection, times=1).last_insert_rowid()
-		verifyNoMoreInteractions(self.cursor, self.connection)
+		verify(self.cursor, times=1).getconnection()
+		verify(self.connection, times=1).last_insert_rowid()
+
 		self.assertIsNone(fdo.value)
 		self.assertIsNone(fdo.timestamp)
 		self.assertTrue(fdo.rowid == 42)
@@ -41,75 +43,84 @@ class TestDbObject(unittest.TestCase):
 	def test_create_same(self):
 		when(self.connection).last_insert_rowid().thenReturn(42)
 
-		fdo = next(FakeDbObject(self.transaction))
+		f = FakeDbObject(self.transaction)
+		fdo = next(f)
+		self.assertEqual([], list(f))
 
-		inorder.verify(self.cursor, times=1).execute("create table if not exists FakeDbObject (timestamp, value)")
-		inorder.verify(self.cursor, times=1).execute("insert into FakeDbObject (timestamp, value) values (:timestamp, :value)", {
+		verify(self.cursor, times=1).execute('create table if not exists main."PyCeedFakeDbObject" ("FakeDbObject_timestamp", "FakeDbObject_value")')
+		verify(self.cursor, times=1).execute('insert into main."PyCeedFakeDbObject" ("FakeDbObject_timestamp", "FakeDbObject_value") values (:timestamp, :value)', {
 			"timestamp": None,
 			"value": None,
 		})
-		inorder.verify(self.cursor, times=1).getconnection()
-		inorder.verify(self.connection, times=1).last_insert_rowid()
+		verify(self.cursor, times=1).getconnection()
+		verify(self.connection, times=1).last_insert_rowid()
 
-		fdo2 = next(FakeDbObject(self.transaction, rowid=42))
-		verifyNoMoreInteractions(self.cursor, self.connection)
+		f = FakeDbObject(self.transaction, rowid=42)
+		fdo2 = next(f)
+		self.assertEqual([], list(f))
 
 		self.assertTrue(fdo is fdo2)
 
 	def test_create_commit(self):
 		when(self.connection).last_insert_rowid().thenReturn(42)
 
-		fdo = next(FakeDbObject(self.transaction))
+		f = FakeDbObject(self.transaction)
+		fdo = next(f)
+		self.assertEqual([], list(f))
 
-		inorder.verify(self.cursor, times=1).execute("create table if not exists FakeDbObject (timestamp, value)")
-		inorder.verify(self.cursor, times=1).execute("insert into FakeDbObject (timestamp, value) values (:timestamp, :value)", {
+		verify(self.cursor, times=1).execute('create table if not exists main."PyCeedFakeDbObject" ("FakeDbObject_timestamp", "FakeDbObject_value")')
+		verify(self.cursor, times=1).execute('insert into main."PyCeedFakeDbObject" ("FakeDbObject_timestamp", "FakeDbObject_value") values (:timestamp, :value)', {
 			"timestamp": None,
 			"value": None,
 		})
-		inorder.verify(self.cursor, times=1).getconnection()
-		inorder.verify(self.connection, times=1).last_insert_rowid()
+		verify(self.cursor, times=1).getconnection()
+		verify(self.connection, times=1).last_insert_rowid()
 
-		fdo2 = next(FakeDbObject(self.transaction, rowid=42, value="foobar"))
-		verifyNoMoreInteractions(self.cursor, self.connection)
+		f = FakeDbObject(self.transaction, rowid=42, value="foobar")
+		fdo2 = next(f)
+		self.assertEqual([], list(f))
 
 		self.assertEqual("foobar", fdo.value)
 		self.assertTrue(fdo is fdo2)
 
 		fdo.commit()
-		inorder.verify(self.cursor, times=1).execute("update FakeDbObject set value = :value where rowid = :rowid", {
+		verify(self.cursor, times=1).execute('update main."PyCeedFakeDbObject" set "FakeDbObject_value" = :value where rowid = :rowid', {
 			"value": "foobar",
 			"rowid": 42,
 		})
-		verifyNoMoreInteractions(self.cursor, self.connection)
 
 	def test_create_rollback(self):
 		when(self.connection).last_insert_rowid().thenReturn(42)
 
-		fdo = next(FakeDbObject(self.transaction))
+		f = FakeDbObject(self.transaction)
+		fdo = next(f)
+		self.assertEqual([], list(f))
 
-		inorder.verify(self.cursor, times=1).execute("create table if not exists FakeDbObject (timestamp, value)")
-		inorder.verify(self.cursor, times=1).execute("insert into FakeDbObject (timestamp, value) values (:timestamp, :value)", {
+		verify(self.cursor, times=1).execute('create table if not exists main."PyCeedFakeDbObject" ("FakeDbObject_timestamp", "FakeDbObject_value")')
+		verify(self.cursor, times=1).execute('insert into main."PyCeedFakeDbObject" ("FakeDbObject_timestamp", "FakeDbObject_value") values (:timestamp, :value)', {
 			"timestamp": None,
 			"value": None,
 		})
-		inorder.verify(self.cursor, times=1).getconnection()
-		inorder.verify(self.connection, times=1).last_insert_rowid()
 
-		fdo2 = next(FakeDbObject(self.transaction, rowid=42, value="foobar"))
-		verifyNoMoreInteractions(self.cursor, self.connection)
+		self.assertEqual(42, fdo.rowid)
+
+		f = FakeDbObject(self.transaction, rowid=42, value="foobar")
+		fdo2 = next(f)
+		self.assertEqual([], list(f))
 
 		self.assertEqual("foobar", fdo.value)
 		self.assertTrue(fdo is fdo2)
 
 		fdo.rollback()
-		verifyNoMoreInteractions(self.cursor, self.connection)
 
 		self.assertIsNone(fdo.value)
 
 	def test_select_one(self):
-		when(self.cursor).execute("select timestamp, value from FakeDbObject where rowid = ?", (42,)).thenReturn([(None,"foobar")]).thenReturn(None)
+		when(self.cursor).execute('select "FakeDbObject_timestamp", "FakeDbObject_value" from main."PyCeedFakeDbObject" where rowid = ?', (42,)).thenReturn([(None,"foobar")]).thenReturn(None)
 
-		fdo = next(FakeDbObject(self.transaction, rowid=42))
+		f = FakeDbObject(self.transaction, rowid=42)
+		fdo = next(f)
+		self.assertEqual([], list(f))
 		self.assertTrue(type(fdo) is FakeDbObject)
 
 		self.assertEqual("foobar", fdo.value)
@@ -117,30 +128,31 @@ class TestDbObject(unittest.TestCase):
 		self.assertTrue(fdo.rowid == 42)
 		self.assertEqual({FakeDbObject: {42: fdo}}, self.transaction._map)
 
-		fdo2 = next(FakeDbObject(self.transaction, rowid=42))
+		f = FakeDbObject(self.transaction, rowid=42)
+		fdo2 = next(f)
+		self.assertEqual([], list(f))
 		self.assertTrue(fdo is fdo2)
 
 	def test_select_many(self):
-		when(self.cursor).execute("select rowid from FakeDbObject where value = :value", {
+		when(self.cursor).execute('select rowid from main."PyCeedFakeDbObject" where "FakeDbObject_value" = :value', {
 			"value": "foobar",
 		}).thenReturn([(1,),(13,)]).thenReturn(None)
-		when(self.cursor).execute("select timestamp, value from FakeDbObject where rowid = ?", (1,)).thenReturn([("ts1", "foobar")]).thenReturn(None)
-		when(self.cursor).execute("select timestamp, value from FakeDbObject where rowid = ?", (13,)).thenReturn([("ts13", "foobar")]).thenReturn(None)
+		when(self.cursor).execute('select "FakeDbObject_timestamp", "FakeDbObject_value" from main."PyCeedFakeDbObject" where rowid = ?', (1,)).thenReturn([("ts1", "foobar")]).thenReturn(None)
+		when(self.cursor).execute('select "FakeDbObject_timestamp", "FakeDbObject_value" from main."PyCeedFakeDbObject" where rowid = ?', (13,)).thenReturn([("ts13", "foobar")]).thenReturn(None)
 
-		fdos = FakeDbObject(self.transaction, value="foobar")
+		f = FakeDbObject(self.transaction, value="foobar")
 
-		fdo0 = next(fdos)
+		fdo0 = next(f)
 		self.assertEqual(1, fdo0.rowid)
 		self.assertEqual("ts1", fdo0.timestamp)
 		self.assertEqual("foobar", fdo0.value)
 
-		fdo1 = next(fdos)
+		fdo1 = next(f)
 		self.assertEqual(13, fdo1.rowid)
 		self.assertEqual("ts13", fdo1.timestamp)
 		self.assertEqual("foobar", fdo1.value)
 
-		with self.assertRaises(StopIteration):
-			next(fdos)
+		self.assertEqual([], list(f))
 
 
 if __name__ == '__main__':

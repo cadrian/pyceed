@@ -12,11 +12,12 @@ class FeedException(DbException):
 class Feed(_DbObject):
 	_columns = ("url", "etag", "modified")
 
-	def __new__(cls, transaction, rowid=None, url=None, **data):
-		if rowid is None:
+	def __new__(cls, transaction, rowid=None, url=None, insert=None, **data):
+		if rowid is None and insert is True:
 			if url is None:
 				raise FeedException("url is needed")
 		data["url"] = url
+		data["insert"] = insert
 		return super(Feed, cls).__new__(cls, transaction, rowid, **data)
 
 	def entries(self):
@@ -38,23 +39,26 @@ class Feed(_DbObject):
 class FeedEntry(_DbObject):
 	_columns = ("definition", "id", "feedid")
 
-	def __new__(cls, transaction, rowid=None, definition=None, feed=None, feedid=None, **data):
-		if rowid is None:
+	def __new__(cls, transaction, rowid=None, definition=None, feed=None, feedid=None, insert=None, **data):
+		if feed is None:
+			if feedid is not None:
+				feed = transaction.select(Feed, feedid)
+		elif feedid is None:
+			feedid = feed.rowid
+
+		if rowid is None and insert is True:
 			if feed is None:
-				if feedid is None:
-					raise FeedException("feed or feedid is needed")
-				else:
-					feed = Feed(transaction=transaction, rowid=feedid)
-			elif feedid is None:
-				feedid = feed.rowid
+				raise FeedException("feed or feedid is needed")
 			elif feed.rowid != feedid:
 				raise FeedException("feed.rowid = %s / feedid = %s" % (feed.rowid, feedid))
-		if feedid is not None:
-			data["feedid"] = feedid
-		if feed is not None:
-			data["feed"] = feed
+
 		if definition is not None:
 			data["definition"] = pickle.dumps(definition)
+		if feed is not None:
+			data["feed"] = feed
+			data["feedid"] = feedid
+		if insert is not None:
+			data["insert"] = insert
 		return super(FeedEntry, cls).__new__(cls, transaction, rowid, **data)
 
 	def __getattr__(self, name):

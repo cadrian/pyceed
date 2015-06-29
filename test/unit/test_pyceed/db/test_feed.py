@@ -1,3 +1,4 @@
+import logging
 import unittest
 from mockito import mock, when, verify, verifyNoMoreInteractions, inorder
 from pyceed.db import Feed, FeedEntry, FeedException
@@ -9,6 +10,7 @@ class TestFeed(unittest.TestCase):
 	"""
 
 	def setUp(self):
+		logging.basicConfig(level=logging.DEBUG, format='%(asctime)s [%(levelname)s] <%(threadName)s> %(message)s')
 		self.transaction = mock()
 		self.transaction._map = {}
 		self.cursor = mock()
@@ -18,24 +20,34 @@ class TestFeed(unittest.TestCase):
 
 	def test_create_feed_no_url(self):
 		with self.assertRaises(FeedException):
-			Feed(self.transaction)
+			Feed(self.transaction, insert=True)
 
 	def test_create_feed(self):
+		def iter(*a):
+			for o in a:
+				yield (o,)
+
 		when(self.connection).last_insert_rowid().thenReturn(42).thenReturn(1).thenReturn(13).thenReturn(None)
-		when(self.cursor).execute("select rowid from Feed where url = :url", {
+		when(self.cursor).execute('select rowid from main."PyCeedFeed" where "Feed_url" = :url', {
 			"url": "foo://bar"
 		}).thenReturn([])
-		when(self.cursor).execute("select rowid from FeedEntry where feedid = :feedid", {
+		when(self.cursor).execute('select rowid from main."PyCeedFeedEntry" where "FeedEntry_feedid" = :feedid', {
 			"feedid": 42
-		}).thenReturn([]).thenReturn([]).thenReturn([(1,)]).thenReturn([(1,),(13,)])
+		}).thenReturn(iter()).thenReturn(iter()).thenReturn(iter(1)).thenReturn(iter(1,13))
 
-		feed = next(Feed(self.transaction, url="foo://bar"))
+		f = Feed(self.transaction, url="foo://bar")
+		feed = next(f)
+		self.assertEqual([], list(f))
 		self.assertEqual([], [o for o in FeedEntry(self.transaction, feed=feed, insert=False)])
-		feed_entry_1 = next(FeedEntry(self.transaction, feed=feed))
+		f = FeedEntry(self.transaction, feed=feed)
+		feed_entry_1 = next(f)
+		self.assertEqual([], list(f))
 
-		entries = FeedEntry(self.transaction, feed=feed, insert=True)
-		self.assertTrue(next(entries) is feed_entry_1)
-		feed_entry_2 = next(entries)
+		f = FeedEntry(self.transaction, feed=feed, insert=True)
+		f1 = next(f)
+		self.assertTrue(f1 is feed_entry_1)
+		feed_entry_2 = next(f)
+		self.assertEqual([], list(f))
 
 		self.assertFalse(feed_entry_2 is feed_entry_1)
 
