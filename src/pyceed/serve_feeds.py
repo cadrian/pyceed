@@ -46,12 +46,13 @@ def getApp(root="/"):
 	@app.get(root + "config/<filtername>")
 	@view("config_filter")
 	def config_filter(filtername):
-		filter = trn.select_unique(Filter, name=filtername)
-		if filter.definition is None:
-			filter.definition = ""
+		fil = trn.select_unique(Filter, name=filtername)
+		for col in Filter._columns:
+			if getattr(fil, col, None) is None:
+				setattr(fil, col, "")
 		return dict(
 			root=request.script_name.rstrip('/') + root,
-			filter=filter,
+			filter=fil,
 		)
 
 	@app.post(root + "config/<filtername>")
