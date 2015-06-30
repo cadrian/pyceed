@@ -50,7 +50,7 @@ class _DbObject(object):
 		result = None
 		cursor = transaction.cursor
 
-		#print("\n~~>~~ %s(rowid=%s, insert=%s, %s)" % (cls.__name__, rowid, insert, values))
+		logging.debug("~~>~~ %s(rowid=%s, insert=%s, %s)", cls.__name__, rowid, insert, values)
 
 		columns = cls._columns
 		extra = { k:v for k,v in values.items() if not k in columns }
@@ -64,7 +64,7 @@ class _DbObject(object):
 				cls._tablename(),
 				 ", ".join(cls._columnname(c) for c in columns),
 			)
-			#print(">>>> " + query)
+			logging.debug(">>>> %s", query)
 			cursor.execute(query)
 
 		if rowid is None:
@@ -77,17 +77,17 @@ class _DbObject(object):
 				query = "select rowid from %s" % (
 					cls._tablename(),
 				)
-			#print(">>>> " + query + "\n" + str(values))
+			logging.debug(">>>> %s\n%s", query, values)
 			ex = cursor.execute(query, values)
 			if ex:
 				found = False
 				for row in ex:
+					logging.debug("++++ %s", row)
 					for res in cls(transaction, rowid=row[0], insert=False, **values):
-						logging.debug("++++ %s", res)
 						yield res._update(**extra)
 						found = True
 				if found and not insert:
-					#print("~~<~~ (no rowid, found rows, insert is not True)\n")
+					logging.debug("~~<~~ (no rowid, found rows, insert is not True)")
 					return
 		else:
 			result = instances.get(rowid, None)
@@ -97,7 +97,7 @@ class _DbObject(object):
 
 			if rowid is None:
 				if insert is False:
-					#print("~~<~~ (no rowid, found 0 rows, insert is False)\n")
+					logging.debug("~~<~~ (no rowid, found 0 rows, insert is False)")
 					return
 				data.update(values)
 				query = "insert into %s (%s) values (%s)" % (
@@ -105,7 +105,7 @@ class _DbObject(object):
 					", ".join(cls._columnname(c) for c in columns),
 					", ".join(":%s" % (k,) for k in columns),
 				)
-				#print(">>>> " + query + "\n" + str(data))
+				logging.debug(">>>> %s\n%s", query, data)
 				cursor.execute(query, data)
 				new_rowid = cursor.getconnection().last_insert_rowid()
 			else:
@@ -114,18 +114,19 @@ class _DbObject(object):
 					", ".join(cls._columnname(c) for c in columns),
 					cls._tablename(),
 				)
-				#print(">>>> " + query + "\nrowid=" + str(rowid))
+				logging.debug(">>>> %s\n%s", query, rowid)
 				rows = cursor.execute(query, (rowid,))
 				for row in rows:
+					logging.debug("++++ %s", row)
 					for i, col in enumerate(columns):
 						data[col] = row[i]
-					list(rows)
 					break
 				else:
 					# Don't insert a new row if the rowid is provided; in that case,
 					# if the row does not exist None must be returned
-					#print("~~<~~ (rowid=%s, found 0 rows)\n"% (new_rowid,))
+					logging.debug("~~<~~ (rowid=%s, found 0 rows)", new_rowid)
 					return
+				list(rows)
 
 			result = super(_DbObject, cls).__new__(cls)
 			result.__rowid = new_rowid
@@ -140,7 +141,7 @@ class _DbObject(object):
 		result._update(**extra)
 		yield result
 
-		#print("~~<~~ (otherwise)\n")
+		logging.debug("~~<~~ (otherwise)")
 		return
 
 	def __eq__(self, other):
@@ -158,7 +159,7 @@ class _DbObject(object):
 				self._tablename(),
 				", ".join('%s = :%s' % (self._columnname(k),k) for k in self._columns if k in data),
 			)
-			#print(">>>> " + query + "\n" + str(data))
+			logging.debug(">>>> %s\n%s", query, data)
 			data["rowid"] = self.__rowid
 			self.transaction.cursor.execute(query, data)
 

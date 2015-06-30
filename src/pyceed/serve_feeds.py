@@ -119,5 +119,7 @@ def getApp(root="/"):
 
 app = application = getApp("/")
 if __name__ == '__main__':
-	logging.basicConfig(level=logging.DEBUG, format='%(asctime)s [%(levelname)s] <%(threadName)s> %(message)s')
+	logging.basicConfig(level=logging.DEBUG, format='%(asctime)s [%(levelname)s] %(message)s')
 	run(app, host=host, port=port)
+else:
+	logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')

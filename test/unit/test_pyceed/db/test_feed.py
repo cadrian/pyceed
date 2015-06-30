@@ -68,14 +68,14 @@ class TestFeed(unittest.TestCase):
 		def iter():
 			yield feed_entry_1
 			yield feed_entry_2
-		when(self.transaction).select_all(FeedEntry, feedid=42).thenReturn(iter())
+		when(self.transaction).select_all(FeedEntry, feedid=42, insert=False).thenReturn(iter())
 
-		entries_gen = feed.entries()
-		entries = [e for e in entries_gen]
+		entries = list(feed.entries())
 		self.assertEqual(2, len(entries))
 		self.assertTrue(feed_entry_1 in entries)
 		self.assertTrue(feed_entry_2 in entries)
 
 
 if __name__ == '__main__':
+	logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
 	unittest.main()
