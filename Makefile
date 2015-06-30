@@ -7,7 +7,7 @@ all: test
 test: $(TESTS_FLAG)
 
 dep:
-	install-deps.sh
+	./install-deps.sh
 
 %.flag: %.py $(FILES)
 	PYTHONPATH=$(shell pwd)/src:$(PYTHONPATH) python3 $< && touch $@
