@@ -32,7 +32,7 @@ def getApp(root="/"):
 	def config():
 		filters = list(trn.select_all(Filter, insert=False))
 		return dict(
-			root=request.script_name + root,
+			root=request.script_name.rstrip('/') + root,
 			filters=filters,
 		)
 
@@ -41,7 +41,7 @@ def getApp(root="/"):
 		name = request.forms.get('config_name')
 		if name is None or name == "_new":
 			name = request.forms.get('config_name_text')
-		return redirect(request.script_name + root + "config/" + name)
+		return redirect(request.script_name.rstrip('/') + root + "config/" + name)
 
 	@app.get(root + "config/<filtername>")
 	@view("config_filter")
@@ -50,7 +50,7 @@ def getApp(root="/"):
 		if filter.definition is None:
 			filter.definition = ""
 		return dict(
-			root=request.script_name + root,
+			root=request.script_name.rstrip('/') + root,
 			filter=filter,
 		)
 
@@ -66,7 +66,7 @@ def getApp(root="/"):
 		except:
 			logging.exception("config_filter failed for filter %s" % (filtername,))
 			trn.rollback()
-		return redirect(request.script_name + root + "config")
+		return redirect(request.script_name.rstrip('/') + root + "config")
 
 	@app.get(root + "feed/<type:re:(atom|rss)>/<filtername>")
 	def serve_filter(type, filtername):
