@@ -32,7 +32,7 @@ def getApp(root="/"):
 	def config():
 		filters = list(trn.select_all(Filter, insert=False))
 		return dict(
-			root=root,
+			root=request.script_name + root,
 			filters=filters,
 		)
 
@@ -50,7 +50,7 @@ def getApp(root="/"):
 		if filter.definition is None:
 			filter.definition = ""
 		return dict(
-			root=root,
+			root=request.script_name + root,
 			filter=filter,
 		)
 
