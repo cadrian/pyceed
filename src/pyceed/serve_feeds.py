@@ -86,8 +86,8 @@ def getApp(root="/"):
 
 			out_entry = out_feed.add_entry()
 			out_entry.title(d.title)
-			out_entry.published(d.published)
-			out_entry.updated(d.updated)
+			out_entry.published(getattr(d, "published", None))
+			out_entry.updated(getattr(d, "updated", None))
 			out_entry.id(d.id)
 			out_entry.summary(d.summary)
 			for c in getattr(d, "content", []):
@@ -95,12 +95,23 @@ def getApp(root="/"):
 			for l in getattr(d, "links", []):
 				out_entry.link(link=l)
 
-		if type == "atom":
-			response.content_type = "application/atom+xml"
-			return out_feed.atom_str()
-		else:
-			response.content_type = "application/rss+xml"
-			return out_feed.rss_str()
+		try:
+			if type == "atom":
+				mimetype = "application/atom+xml"
+				result = out_feed.atom_str()
+			else:
+				mimetype = "application/rss+xml"
+				result = out_feed.rss_str()
+		except:
+			logging.exception("%s error", type)
+			mimetype = "text/plain"
+			result = """
+			An error occurred while trying to produce this feed.
+			You could try using %s instead.
+			""" % ("rss" if type == "atom" else "atom",)
+
+		response.content_type = mimetype
+		return result
 
 	return app
 
